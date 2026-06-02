@@ -1,0 +1,21 @@
+ticker,name,sector,asset_type,shares,purchase_price,current_price
+BIL,SPDR Bloomberg 1-3M T-Bill,Government,ETF,50,91.50,91.80
+VGSH,Vanguard Short-Term Treasury,Government,ETF,40,58.20,58.50
+JNJ,Johnson & Johnson,Healthcare,Stock,20,155.00,162.40
+PG,Procter & Gamble,Consumer Staples,Stock,15,142.00,149.75
+MMF,Fidelity Money Market,Money Market,Fund,100,10.00,10.00
+GLD,SPDR Gold Shares,Commodities,ETF,30,178.00,185.50
+IAU,iShares Gold Trust,Commodities,ETF,60,36.20,37.80
+WMT,Walmart,Retail,Stock,25,155.00,168.20
+COST,Costco,Retail,Stock,10,540.00,572.30
+NEE,NextEra Energy,Utilities,Stock,35,72.00,76.40
+AAPL,Apple Inc,Technology,Stock,50,172.00,189.30
+MSFT,Microsoft Corp,Technology,Stock,30,310.00,378.90
+NVDA,NVIDIA Corp,Technology,Stock,20,450.00,875.40
+UNH,UnitedHealth Group,Healthcare,Stock,12,480.00,512.60
+AMZN,Amazon.com,Consumer Discretionary,Stock,18,130.00,178.25
+MSTR,MicroStrategy,Technology,Stock,15,300.00,1245.00
+COIN,Coinbase Global,Financial,Stock,20,180.00,225.40
+EEM,iShares MSCI Emerging Markets,Emerging Markets,ETF,80,38.50,41.20
+ARKG,ARK Genomic Revolution ETF,Healthcare,ETF,45,42.00,38.75
+SOXS,Direxion Daily Semicon Bear,Technology,ETF,25,18.00,14.30

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stock Portfolio Risk Analyzer — Project Documentation</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #222; max-width: 960px; margin: 40px auto; padding: 0 24px; }
+  h1 { font-size: 20pt; color: #1a1a1a; margin-bottom: 4px; }
+  h2 { font-size: 14pt; color: #1a1a1a; margin-top: 36px; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 4px; }
+  p.meta { color: #555; font-size: 10pt; margin-top: 0; }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 10.5pt; }
+  th { background-color: #1f4e79; color: #fff; text-align: left; padding: 8px 10px; }
+  td { border: 1px solid #c0c0c0; padding: 7px 10px; vertical-align: top; }
+  tr:nth-child(even) td { background-color: #f2f7ff; }
+
+  /* risk bucket colors */
+  .less-risk  { background-color: #dce9f7; font-weight: bold; }
+  .moderate   { background-color: #d4edda; font-weight: bold; }
+  .growth     { background-color: #fff3cd; font-weight: bold; }
+  .aggressive { background-color: #f8d7da; font-weight: bold; }
+
+  .pnl-pos { color: #155724; }
+  .pnl-neg { color: #721c24; }
+
+  .section-label { background-color: #1f4e79; color: #fff; font-weight: bold; padding: 6px 10px; display: block; margin-top: 10px; font-size: 11pt; }
+</style>
+</head>
+<body>
+
+<h1>Stock Portfolio Risk Analyzer</h1>
+<p class="meta">Vibe Coding Project &nbsp;|&nbsp; June 1, 2026 &nbsp;|&nbsp; Stack: Python · Streamlit · Pandas · Plotly</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>1. Project Overview</h2>
+
+<table>
+  <tr>
+    <th style="width:22%">Aspect</th>
+    <th>Details</th>
+  </tr>
+  <tr>
+    <td><strong>What I built</strong></td>
+    <td>A Streamlit web app that loads a stock portfolio from CSV, auto-assigns each holding to one of four risk buckets (Less Risk, Moderate, Growth, Aggressive), and helps the user rebalance their portfolio to match a target allocation.</td>
+  </tr>
+  <tr>
+    <td><strong>Problem solved</strong></td>
+    <td>Most portfolio trackers show what you own. This app tells you whether your current mix matches your risk appetite and exactly what to buy or sell — in dollar amounts — to fix it.</td>
+  </tr>
+  <tr>
+    <td><strong>Target user</strong></td>
+    <td>Individual retail investors holding a mix of ETFs, stocks, and bond funds who want a visual, actionable view of their risk profile.</td>
+  </tr>
+  <tr>
+    <td><strong>Path chosen</strong></td>
+    <td>Path B — Custom app (stock portfolio analyzer with risk bucketing and rebalancing engine, beyond the basic walkthrough demo).</td>
+  </tr>
+  <tr>
+    <td><strong>Tech stack</strong></td>
+    <td>Python 3.9 · Streamlit (UI) · Pandas (data) · Plotly (charts)</td>
+  </tr>
+  <tr>
+    <td><strong>App sections</strong></td>
+    <td>
+      1. Portfolio Overview — full holdings table with filters and P&amp;L metrics<br>
+      2. Allocation Dashboard — donut chart + target sliders with sum-to-100 validation<br>
+      3. Rebalancing Engine — BUY / SELL / HOLD actions with dollar amounts<br>
+      4. Sector Breakdown — grouped bar chart + sector × bucket heatmap<br>
+      5. Gain/Loss Summary — P&amp;L per ticker and per risk bucket
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Tests</strong></td>
+    <td>30 unit tests across two test files (test_categorizer.py · test_rebalancer.py). All pass.</td>
+  </tr>
+  <tr>
+    <td><strong>Total portfolio value</strong></td>
+    <td>$110,139 market value · $80,960 cost basis · $29,179 unrealized gain (+36%)</td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>2. Dataset Used</h2>
+
+<span class="section-label">Schema</span>
+<table>
+  <tr>
+    <th>Column</th><th>Type</th><th>Description</th>
+  </tr>
+  <tr><td>ticker</td><td>string</td><td>Stock/ETF symbol (e.g. AAPL, GLD)</td></tr>
+  <tr><td>name</td><td>string</td><td>Full holding name</td></tr>
+  <tr><td>sector</td><td>string</td><td>Sector classification (e.g. Technology, Retail)</td></tr>
+  <tr><td>asset_type</td><td>string</td><td>Stock, ETF, or Fund</td></tr>
+  <tr><td>shares</td><td>integer</td><td>Number of shares held</td></tr>
+  <tr><td>purchase_price</td><td>float</td><td>Price paid per share (cost basis input)</td></tr>
+  <tr><td>current_price</td><td>float</td><td>Current price per share (acts as live price)</td></tr>
+</table>
+
+<span class="section-label">Holdings — 20 rows, 5 per risk bucket</span>
+<table>
+  <tr>
+    <th>Risk Bucket</th><th>Ticker</th><th>Name</th><th>Sector</th><th>Type</th>
+    <th>Shares</th><th>Purchase $</th><th>Current $</th>
+    <th>Market Value</th><th>Unrealized P&amp;L</th><th>P&amp;L %</th>
+  </tr>
+
+  <!-- Less Risk -->
+  <tr><td class="less-risk">Less Risk</td><td>BIL</td><td>SPDR Bloomberg 1-3M T-Bill</td><td>Government</td><td>ETF</td><td>50</td><td>$91.50</td><td>$91.80</td><td>$4,590</td><td class="pnl-pos">+$15</td><td class="pnl-pos">+0.3%</td></tr>
+  <tr><td class="less-risk">Less Risk</td><td>VGSH</td><td>Vanguard Short-Term Treasury</td><td>Government</td><td>ETF</td><td>40</td><td>$58.20</td><td>$58.50</td><td>$2,340</td><td class="pnl-pos">+$12</td><td class="pnl-pos">+0.5%</td></tr>
+  <tr><td class="less-risk">Less Risk</td><td>JNJ</td><td>Johnson &amp; Johnson</td><td>Healthcare</td><td>Stock</td><td>20</td><td>$155.00</td><td>$162.40</td><td>$3,248</td><td class="pnl-pos">+$148</td><td class="pnl-pos">+4.8%</td></tr>
+  <tr><td class="less-risk">Less Risk</td><td>PG</td><td>Procter &amp; Gamble</td><td>Consumer Staples</td><td>Stock</td><td>15</td><td>$142.00</td><td>$149.75</td><td>$2,246</td><td class="pnl-pos">+$116</td><td class="pnl-pos">+5.5%</td></tr>
+  <tr><td class="less-risk">Less Risk</td><td>MMF</td><td>Fidelity Money Market</td><td>Money Market</td><td>Fund</td><td>100</td><td>$10.00</td><td>$10.00</td><td>$1,000</td><td>$0</td><td>0.0%</td></tr>
+
+  <!-- Moderate -->
+  <tr><td class="moderate">Moderate</td><td>GLD</td><td>SPDR Gold Shares</td><td>Commodities</td><td>ETF</td><td>30</td><td>$178.00</td><td>$185.50</td><td>$5,565</td><td class="pnl-pos">+$225</td><td class="pnl-pos">+4.2%</td></tr>
+  <tr><td class="moderate">Moderate</td><td>IAU</td><td>iShares Gold Trust</td><td>Commodities</td><td>ETF</td><td>60</td><td>$36.20</td><td>$37.80</td><td>$2,268</td><td class="pnl-pos">+$96</td><td class="pnl-pos">+4.4%</td></tr>
+  <tr><td class="moderate">Moderate</td><td>WMT</td><td>Walmart</td><td>Retail</td><td>Stock</td><td>25</td><td>$155.00</td><td>$168.20</td><td>$4,205</td><td class="pnl-pos">+$330</td><td class="pnl-pos">+8.5%</td></tr>
+  <tr><td class="moderate">Moderate</td><td>COST</td><td>Costco</td><td>Retail</td><td>Stock</td><td>10</td><td>$540.00</td><td>$572.30</td><td>$5,723</td><td class="pnl-pos">+$323</td><td class="pnl-pos">+6.0%</td></tr>
+  <tr><td class="moderate">Moderate</td><td>NEE</td><td>NextEra Energy</td><td>Utilities</td><td>Stock</td><td>35</td><td>$72.00</td><td>$76.40</td><td>$2,674</td><td class="pnl-pos">+$154</td><td class="pnl-pos">+6.1%</td></tr>
+
+  <!-- Growth -->
+  <tr><td class="growth">Growth</td><td>AAPL</td><td>Apple Inc</td><td>Technology</td><td>Stock</td><td>50</td><td>$172.00</td><td>$189.30</td><td>$9,465</td><td class="pnl-pos">+$865</td><td class="pnl-pos">+10.1%</td></tr>
+  <tr><td class="growth">Growth</td><td>MSFT</td><td>Microsoft Corp</td><td>Technology</td><td>Stock</td><td>30</td><td>$310.00</td><td>$378.90</td><td>$11,367</td><td class="pnl-pos">+$2,067</td><td class="pnl-pos">+22.2%</td></tr>
+  <tr><td class="growth">Growth</td><td>NVDA</td><td>NVIDIA Corp</td><td>Technology</td><td>Stock</td><td>20</td><td>$450.00</td><td>$875.40</td><td>$17,508</td><td class="pnl-pos">+$8,508</td><td class="pnl-pos">+94.5%</td></tr>
+  <tr><td class="growth">Growth</td><td>UNH</td><td>UnitedHealth Group</td><td>Healthcare</td><td>Stock</td><td>12</td><td>$480.00</td><td>$512.60</td><td>$6,151</td><td class="pnl-pos">+$391</td><td class="pnl-pos">+6.8%</td></tr>
+  <tr><td class="growth">Growth</td><td>AMZN</td><td>Amazon.com</td><td>Consumer Discretionary</td><td>Stock</td><td>18</td><td>$130.00</td><td>$178.25</td><td>$3,209</td><td class="pnl-pos">+$869</td><td class="pnl-pos">+37.1%</td></tr>
+
+  <!-- Aggressive -->
+  <tr><td class="aggressive">Aggressive</td><td>MSTR</td><td>MicroStrategy</td><td>Technology</td><td>Stock</td><td>15</td><td>$300.00</td><td>$1,245.00</td><td>$18,675</td><td class="pnl-pos">+$14,175</td><td class="pnl-pos">+315.0%</td></tr>
+  <tr><td class="aggressive">Aggressive</td><td>COIN</td><td>Coinbase Global</td><td>Financial</td><td>Stock</td><td>20</td><td>$180.00</td><td>$225.40</td><td>$4,508</td><td class="pnl-pos">+$908</td><td class="pnl-pos">+25.2%</td></tr>
+  <tr><td class="aggressive">Aggressive</td><td>EEM</td><td>iShares MSCI Emerging Markets</td><td>Emerging Markets</td><td>ETF</td><td>80</td><td>$38.50</td><td>$41.20</td><td>$3,296</td><td class="pnl-pos">+$216</td><td class="pnl-pos">+7.0%</td></tr>
+  <tr><td class="aggressive">Aggressive</td><td>ARKG</td><td>ARK Genomic Revolution ETF</td><td>Healthcare</td><td>ETF</td><td>45</td><td>$42.00</td><td>$38.75</td><td>$1,744</td><td class="pnl-neg">-$146</td><td class="pnl-neg">-7.7%</td></tr>
+  <tr><td class="aggressive">Aggressive</td><td>SOXS</td><td>Direxion Daily Semicon Bear</td><td>Technology</td><td>ETF</td><td>25</td><td>$18.00</td><td>$14.30</td><td>$358</td><td class="pnl-neg">-$93</td><td class="pnl-neg">-20.6%</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>3. Prompts Used During Vibe Coding</h2>
+
+<table>
+  <tr>
+    <th style="width:5%">#</th>
+    <th style="width:30%">Prompt</th>
+    <th style="width:25%">What It Produced</th>
+    <th>Key Observation</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>"Still stock portfolio but I want to bucketize stocks by risk factor and categories — Less Risk, Moderate, Growth, Aggressive. Sector Retail and other necessary service stocks are Moderate. Gold, treasury moderate so on so forth."</td>
+    <td>Full architecture: 4 risk buckets, 5-section UI, file structure, rebalancing math, build order</td>
+    <td>One natural-language prompt replaced a design doc. The AI asked clarifying questions (stack, data input, visualizations) before writing a line of code.</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>"Can we also add unit tests for this and other functions that we might add?"</td>
+    <td>30 unit tests across 2 test files — categorizer (16) and rebalancer (14). All passed on first run.</td>
+    <td>Adding tests mid-build (not after) caught a division-by-zero edge case in the rebalancer's proportional weight calculation immediately.</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>"Deliverable — can we work towards that? Submit a Google Doc explaining what you built. Include: project overview, datasets used, prompts you used during vibe coding, iterations you tried, and any learnings."</td>
+    <td>Full project documentation (this document), generated by reading the actual codebase and live portfolio stats.</td>
+    <td>The AI pulled real numbers ($110,139 portfolio value, bucket %) directly from running the code — not fabricated.</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>"Let's create each of these sections as an independent table in the Google Doc."</td>
+    <td>HTML file with 5 independent, color-coded tables — copy-pasteable directly into Google Docs with formatting preserved.</td>
+    <td>Structured output request (tables vs prose) required zero back-and-forth — one prompt, done.</td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>4. Iterations Tried</h2>
+
+<table>
+  <tr>
+    <th style="width:20%">Iteration</th>
+    <th style="width:30%">What I Tried / Considered</th>
+    <th style="width:25%">What Was Chosen Instead</th>
+    <th>Why</th>
+  </tr>
+  <tr>
+    <td><strong>Risk classification logic</strong></td>
+    <td>Sector-only rules (e.g. Technology → Growth for all tech stocks)</td>
+    <td>Two-layer lookup: ticker override first, then sector rule as fallback</td>
+    <td>MSTR is labeled Technology by sector but is essentially a Bitcoin proxy — sector alone misclassifies it. Ticker overrides capture asset-specific knowledge sector labels cannot.</td>
+  </tr>
+  <tr>
+    <td><strong>Slider sum constraint</strong></td>
+    <td>Auto-adjust sibling sliders so the total always stays at 100% as the user drags</td>
+    <td>Independent sliders + real-time sum display + warning + disabled confirm button until sum = 100</td>
+    <td>Auto-adjust causes an infinite rerun loop in Streamlit — every slider change triggers a rerun, which changes other sliders, which triggers another rerun. Manual adjustment with clear feedback is more stable and more transparent.</td>
+  </tr>
+  <tr>
+    <td><strong>Rebalancing HOLD threshold</strong></td>
+    <td>Label every stock with a non-zero delta as BUY or SELL</td>
+    <td>Deltas under $50 absolute value are labeled HOLD</td>
+    <td>Without a threshold, floating-point math produced absurd outputs like "SELL $2.14 of MMF." A $50 floor keeps the rebalancing table actionable rather than noisy.</td>
+  </tr>
+  <tr>
+    <td><strong>Delta distribution within buckets</strong></td>
+    <td>Sell the most overweight stock in a bucket first (concentrated approach)</td>
+    <td>Distribute bucket delta proportionally across all stocks in that bucket by current weight</td>
+    <td>Concentrated selling would deplete NVDA entirely before touching MSFT or AAPL. Proportional distribution keeps the internal composition of each bucket unchanged — only the bucket size changes. This matches how a passive investor would rebalance.</td>
+  </tr>
+  <tr>
+    <td><strong>Navigation structure</strong></td>
+    <td>Multi-page app using Streamlit's pages/ folder, or st.tabs()</td>
+    <td>st.sidebar.radio() with 5 sections in a single app.py</td>
+    <td>Sidebar navigation matches the "dashboard" mental model for a financial app. Single-file approach shares session state (portfolio df, confirmed targets) naturally without cross-page state management complexity.</td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>5. Learnings and Observations</h2>
+
+<table>
+  <tr>
+    <th style="width:22%">Category</th>
+    <th>Observation</th>
+  </tr>
+  <tr>
+    <td><strong>Plan before code</strong></td>
+    <td>The most valuable moment in the workflow was entering Plan Mode before any file was created. Claude proposed the architecture, data model, rebalancing math with a worked example, and build order — all for approval before touching a file. Implementation was then fast and linear with no wasted rework.</td>
+  </tr>
+  <tr>
+    <td><strong>Tests early, not after</strong></td>
+    <td>Asking for unit tests before the first standalone run changed the quality of the code. The rebalancer's HOLD threshold, proportional distribution, and sign logic were all verified immediately. It also caught a subtle edge case: the proportional weight calculation needed a guard for empty buckets (division by zero).</td>
+  </tr>
+  <tr>
+    <td><strong>AI held architecture in context</strong></td>
+    <td>BUCKET_COLORS was defined once in categorizer.py and imported consistently by app.py and all chart configurations — never duplicated. Across file creation, module imports, session state design, and UI layout, Claude maintained consistency without being reminded.</td>
+  </tr>
+  <tr>
+    <td><strong>Risk classification needs human judgment</strong></td>
+    <td>The ticker override table (e.g. MSTR → Aggressive despite Technology sector) reflects a human call about what those assets actually are, not just their label. Claude built the framework; domain knowledge came from the human. The AI cannot independently decide that MicroStrategy is a Bitcoin proxy.</td>
+  </tr>
+  <tr>
+    <td><strong>Prompts are design decisions</strong></td>
+    <td>"Can we add unit tests?" is also "I want this code to be correct and verifiable." Every prompt in this project was a design choice disguised as a request. The AI acts on stated intent — the values behind that intent come from the human.</td>
+  </tr>
+  <tr>
+    <td><strong>Iteration is cheap, direction is not</strong></td>
+    <td>Changing a chart type, adding a filter, or tweaking the HOLD threshold took seconds. Changing the fundamental structure (e.g. sidebar nav → tabs) would touch many files. The upfront planning session paid for itself by locking in the right direction early.</td>
+  </tr>
+  <tr>
+    <td><strong>You must understand the math to trust it</strong></td>
+    <td>Verifying the rebalancing engine required working through the proportional distribution example on paper before trusting the output. The AI wrote correct code — but knowing it was correct required understanding the underlying math independently.</td>
+  </tr>
+  <tr>
+    <td><strong>Synthetic data is a deliberate tradeoff</strong></td>
+    <td>Using a static CSV instead of a live market data API (Yahoo Finance, Alpha Vantage) removed API key complexity and made the app work offline. The tradeoff is that "current prices" are frozen. A production version would replace the CSV with a real-time data feed.</td>
+  </tr>
+  <tr>
+    <td><strong>Using Claude Agent architecture to persist workflow state across sessions</strong></td>
+    <td>
+      This project spans 3 days. To avoid re-explaining context at the start of every session, Claude Code's agent memory and <code>CLAUDE.md</code> were used as a two-layer persistence system:<br><br>
+      <strong>CLAUDE.md</strong> (project-level) — auto-loaded by Claude Code at the start of every session. Contains the full architecture, iteration plan by day, coding conventions, and design decisions that must not be changed without deliberate intent.<br><br>
+      <strong>Agent memory</strong> (user-level) — Claude's own memory system stores project state, user working style, and workflow preferences (e.g. always update prompts.md, HTML is the doc source of truth). This persists even across different machines or IDEs.<br><br>
+      Together these mean Day 2 and Day 3 sessions begin with full context — no re-explaining the stack, the risk bucket rules, or the prompt-logging convention. The AI picks up exactly where the previous session ended.
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
