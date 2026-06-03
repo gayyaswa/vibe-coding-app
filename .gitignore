@@ -214,8 +214,9 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# Streamlit
+# Streamlit — ignore secrets but track theme config
 .streamlit/
+!.streamlit/config.toml
 
 # macOS
 .DS_Store
