@@ -1,19 +1,30 @@
 # Stock Portfolio Risk Analyzer — Claude Code Instructions
 
 ## What this project is
-A Streamlit web app that loads a stock portfolio from CSV, auto-assigns each stock to one of 4 risk buckets (Less Risk / Moderate / Growth / Aggressive), and recommends rebalancing actions. Built as a vibe-coding project over 3 days.
+A Streamlit web app that loads a stock portfolio from CSV, auto-assigns each stock to one of 4 risk buckets (Less Risk / Moderate / Growth / Aggressive), recommends rebalancing actions, and scores the portfolio against 3 benchmarks. Built as a vibe-coding project over 3 days.
 
 Run with: `streamlit run app.py`
-Tests: `python3 -m pytest tests/ -v` (30 tests, all pass)
+Tests: `python3 -m pytest tests/ -v` (42 tests, all pass)
 
 ## File map
 ```
-app.py                      Streamlit UI — 5 sidebar sections
-utils/categorizer.py        Risk bucket assignment + derived columns (market_value, pnl, etc.)
+app.py                      Streamlit router — ~60 lines, tab navigation, PortfolioFacade, delegates to views/
+views/overview.py           Portfolio Overview: treemap + health score cards + collapsible holdings table
+views/allocation.py         Allocation Dashboard: donut chart + target sliders
+views/rebalancing.py        Rebalancing Engine: BUY/SELL/HOLD table + delta bar chart
+views/sector.py             Sector Breakdown: grouped bar + heatmap
+views/gainloss.py           Gain/Loss Summary: P&L bar + table + cost vs market chart
+views/__init__.py           apply_theme() helper — sets chart paper/plot background colors
+utils/categorizer.py        Risk bucket assignment (Strategy pattern) + derived columns
 utils/rebalancer.py         Rebalancing math — bucket_summary() and compute_rebalancing()
+utils/facade.py             PortfolioFacade — single entry point for all views (Facade pattern)
+utils/pipeline.py           PortfolioPipeline — sequential data transform steps (Pipeline pattern)
+utils/health.py             BENCHMARK_REGISTRY + HealthScoreFactory (Registry + Factory patterns)
+.streamlit/config.toml      Blue/grey UI theme (primaryColor, backgroundColor, etc.)
 data/portfolio_sample.csv   20 synthetic holdings, 5 per bucket
 tests/test_categorizer.py   16 unit tests
 tests/test_rebalancer.py    14 unit tests
+tests/test_health.py        12 unit tests (health score, benchmark registry, factory)
 prompts.md                  Running log of every prompt used — update after every prompt
 google_doc_content.html     Project documentation as HTML tables — edit this, paste into Google Docs
 ```
@@ -27,20 +38,22 @@ google_doc_content.html     Project documentation as HTML tables — edit this, 
 - [x] 30 unit tests, all passing
 - [x] Project documentation (google_doc_content.html)
 
-### Day 2 — Visualization & Refactoring (planned)
-Likely focus areas (confirm with user at start of session):
-- [ ] Improve chart quality: better tooltips, consistent color legends, richer hover data
-- [ ] Add treemap view — portfolio composition by sector and bucket in one chart
-- [ ] Improve Gain/Loss section: add sparkline-style trend or % bar overlay
-- [ ] Refactor app.py — extract each section into its own function or module (app.py is getting long)
-- [ ] Add a portfolio health score widget based on bucket allocation vs common benchmarks
+### Day 2 — Visualization & Refactoring — COMPLETE (2026-06-02)
+- [x] Refactor app.py → views/ (overview, allocation, rebalancing, sector, gainloss) — ~60-line router
+- [x] Add Strategy pattern to categorizer.py, Pipeline + Facade in utils/, Factory + Registry in health.py
+- [x] Navigation: sidebar radio → st.tabs() (sidebar now holds upload + filters only)
+- [x] Portfolio Overview redesigned: treemap dominant, holdings table collapsed in expander
+- [x] Portfolio Health Score: 3 benchmark comparisons (Conservative / Balanced / Aggressive Growth)
+- [x] UI Theme: blue/grey chrome via .streamlit/config.toml + chart CSS overrides
+- [x] Session state: inputs-only (raw_df, targets) — PortfolioFacade derived on every run
+- [x] 42 unit tests (added 12 for health score), all passing
 
 ### Day 3 — AI Insights (planned)
-Likely focus areas (confirm with user at start of session):
-- [ ] Add an AI Insights section using the Claude API
+Confirm focus areas with user at start of session:
+- [ ] Add an AI Insights tab using the Claude API
 - [ ] Insights to generate: portfolio risk commentary, rebalancing rationale, sector concentration warnings
-- [ ] Consider prompt caching for repeated portfolio analysis
-- [ ] Add to google_doc_content.html: Day 2 and Day 3 iterations + prompts
+- [ ] Use prompt caching on portfolio data (cached prefix) — portfolio DataFrame as context, insights as uncached suffix
+- [ ] Update google_doc_content.html: Day 3 iterations + prompts + learnings
 
 ## Conventions to follow every session
 
@@ -72,8 +85,28 @@ Likely focus areas (confirm with user at start of session):
 
 Ticker override takes priority over sector rule. Both are in `utils/categorizer.py`.
 
+## Design patterns (apply when appropriate, do not force)
+The user heavily uses these patterns — apply them when introducing new modules or refactoring:
+
+| Pattern | Where it applies in this codebase |
+|---|---|
+| **Strategy** | Interchangeable algorithms — e.g. bucket classification rules, benchmark comparison logic, chart rendering per section |
+| **Pipeline / Chain of Responsibility** | Sequential data transforms — e.g. CSV load → enrich → categorize → rebalance as explicit pipeline steps |
+| **Facade** | Simplify complex subsystems — e.g. a single `PortfolioFacade` that wraps categorizer + rebalancer so views never import utils directly |
+| **Factory** | Object creation — e.g. `ChartFactory` that produces consistently styled Plotly figures, `BenchmarkFactory` for health score presets |
+| **Dependency Injection** | Pass collaborators in, don't hardcode — e.g. pass classification strategy into categorizer rather than calling it directly |
+| **Registry** | Named lookup tables — e.g. `TICKER_OVERRIDE` and `SECTOR_RULES` are already registries; benchmark presets should follow the same pattern |
+
+When adding a new module or refactoring an existing one, prefer these patterns over ad-hoc functions. Do not force patterns where a plain function is clearer.
+
+## UI theme (do not deviate without confirmation)
+- Overall app chrome: blue shades, white, and grey (sidebar, backgrounds, cards, table headers, borders)
+- Risk bucket colors are UNCHANGED — Less Risk (blue), Moderate (green), Growth (orange), Aggressive (red) — these carry semantic meaning and complement the blue/grey backdrop
+- `BUCKET_COLORS` in `categorizer.py` must NOT be changed
+- Apply theme via `.streamlit/config.toml` and targeted CSS overrides in app.py — do not hardcode hex values scattered across views
+
 ## Key design decisions (don't undo without checking)
 - Sliders use manual sum-to-100 enforcement (not auto-adjust) — auto-adjust causes Streamlit rerun loops
 - HOLD_THRESHOLD = $50 in rebalancer.py — prevents micro-transaction noise
 - Rebalancing distributes bucket delta proportionally by current stock weight within each bucket
-- Navigation is `st.sidebar.radio` (not tabs or pages/) — session state shared cleanly this way
+- Navigation is `st.tabs()` (not sidebar radio) — tabs render at top of page, sidebar holds upload + filters only

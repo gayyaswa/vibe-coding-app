@@ -14,12 +14,7 @@
   td { border: 1px solid #c0c0c0; padding: 7px 10px; vertical-align: top; }
   tr:nth-child(even) td { background-color: #f2f7ff; }
 
-  /* risk bucket colors */
-  .less-risk  { background-color: #dce9f7; font-weight: bold; }
-  .moderate   { background-color: #d4edda; font-weight: bold; }
-  .growth     { background-color: #fff3cd; font-weight: bold; }
-  .aggressive { background-color: #f8d7da; font-weight: bold; }
-
+  .day-label { background-color: #e8f0fe; font-weight: bold; font-size: 10pt; color: #1f4e79; }
   .pnl-pos { color: #155724; }
   .pnl-neg { color: #721c24; }
 
@@ -29,7 +24,7 @@
 <body>
 
 <h1>Stock Portfolio Risk Analyzer</h1>
-<p class="meta">Vibe Coding Project &nbsp;|&nbsp; June 1, 2026 &nbsp;|&nbsp; Stack: Python · Streamlit · Pandas · Plotly</p>
+<p class="meta">Vibe Coding Project &nbsp;|&nbsp; June 1–2, 2026 &nbsp;|&nbsp; Stack: Python · Streamlit · Pandas · Plotly &nbsp;|&nbsp; Days completed: 2 of 3</p>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>1. Project Overview</h2>
@@ -41,28 +36,25 @@
   </tr>
   <tr>
     <td><strong>What I built</strong></td>
-    <td>A Streamlit web app that loads a stock portfolio from CSV, auto-assigns each holding to one of four risk buckets (Less Risk, Moderate, Growth, Aggressive), and helps the user rebalance their portfolio to match a target allocation.</td>
+    <td>A Streamlit web app that loads a stock portfolio from CSV, auto-assigns each holding to one of four risk buckets (Less Risk, Moderate, Growth, Aggressive), and helps the user rebalance their portfolio to match a target allocation. Day 2 added a visual-first portfolio overview (treemap), portfolio health scores vs. benchmarks, a blue/grey theme, and a full architectural refactor.</td>
   </tr>
   <tr>
     <td><strong>Problem solved</strong></td>
-    <td>Most portfolio trackers show what you own. This app tells you whether your current mix matches your risk appetite and exactly what to buy or sell — in dollar amounts — to fix it.</td>
+    <td>Most portfolio trackers show what you own. This app tells you whether your current mix matches your risk appetite, how it compares to standard benchmarks (Conservative, Balanced, Aggressive Growth), and exactly what to buy or sell — in dollar amounts — to fix it.</td>
   </tr>
   <tr>
     <td><strong>Target user</strong></td>
     <td>Individual retail investors holding a mix of ETFs, stocks, and bond funds who want a visual, actionable view of their risk profile.</td>
   </tr>
   <tr>
-    <td><strong>Path chosen</strong></td>
-    <td>Path B — Custom app (stock portfolio analyzer with risk bucketing and rebalancing engine, beyond the basic walkthrough demo).</td>
-  </tr>
-  <tr>
     <td><strong>Tech stack</strong></td>
-    <td>Python 3.9 · Streamlit (UI) · Pandas (data) · Plotly (charts)</td>
+    <td>Python 3.9 · Streamlit (UI) · Pandas (data) · Plotly (charts) · Anthropic SDK (planned Day 3)</td>
   </tr>
   <tr>
     <td><strong>App sections</strong></td>
     <td>
-      1. Portfolio Overview — full holdings table with filters and P&amp;L metrics<br>
+      Navigation: top tabs (changed from sidebar in Day 2)<br><br>
+      1. Portfolio Overview — treemap (dominant), health score vs. 3 benchmarks, holdings detail (collapsible)<br>
       2. Allocation Dashboard — donut chart + target sliders with sum-to-100 validation<br>
       3. Rebalancing Engine — BUY / SELL / HOLD actions with dollar amounts<br>
       4. Sector Breakdown — grouped bar chart + sector × bucket heatmap<br>
@@ -70,8 +62,16 @@
     </td>
   </tr>
   <tr>
+    <td><strong>Architecture</strong></td>
+    <td>
+      <code>utils/</code> — Pipeline, Strategy (categorizer), Facade (PortfolioFacade), Factory (HealthScoreFactory), Registry (BENCHMARK_REGISTRY)<br>
+      <code>views/</code> — one render() function per tab section<br>
+      <code>app.py</code> — ~60-line router (was 306 lines Day 1)
+    </td>
+  </tr>
+  <tr>
     <td><strong>Tests</strong></td>
-    <td>30 unit tests across two test files (test_categorizer.py · test_rebalancer.py). All pass.</td>
+    <td>42 unit tests across 3 test files (test_categorizer.py · test_rebalancer.py · test_health.py). All pass.</td>
   </tr>
   <tr>
     <td><strong>Total portfolio value</strong></td>
@@ -82,7 +82,11 @@
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>2. Dataset Used</h2>
 
-<span class="section-label">Schema</span>
+<p>
+  Sample data: <a href="data/portfolio_sample.csv"><code>data/portfolio_sample.csv</code></a> — 20 synthetic holdings (5 per risk bucket) covering stocks, ETFs, and money market funds across 8 sectors. Prices are static (no live feed); this was a deliberate tradeoff to keep the app self-contained without API keys.
+</p>
+
+<span class="section-label">CSV Schema</span>
 <table>
   <tr>
     <th>Column</th><th>Type</th><th>Description</th>
@@ -93,171 +97,250 @@
   <tr><td>asset_type</td><td>string</td><td>Stock, ETF, or Fund</td></tr>
   <tr><td>shares</td><td>integer</td><td>Number of shares held</td></tr>
   <tr><td>purchase_price</td><td>float</td><td>Price paid per share (cost basis input)</td></tr>
-  <tr><td>current_price</td><td>float</td><td>Current price per share (acts as live price)</td></tr>
-</table>
-
-<span class="section-label">Holdings — 20 rows, 5 per risk bucket</span>
-<table>
-  <tr>
-    <th>Risk Bucket</th><th>Ticker</th><th>Name</th><th>Sector</th><th>Type</th>
-    <th>Shares</th><th>Purchase $</th><th>Current $</th>
-    <th>Market Value</th><th>Unrealized P&amp;L</th><th>P&amp;L %</th>
-  </tr>
-
-  <!-- Less Risk -->
-  <tr><td class="less-risk">Less Risk</td><td>BIL</td><td>SPDR Bloomberg 1-3M T-Bill</td><td>Government</td><td>ETF</td><td>50</td><td>$91.50</td><td>$91.80</td><td>$4,590</td><td class="pnl-pos">+$15</td><td class="pnl-pos">+0.3%</td></tr>
-  <tr><td class="less-risk">Less Risk</td><td>VGSH</td><td>Vanguard Short-Term Treasury</td><td>Government</td><td>ETF</td><td>40</td><td>$58.20</td><td>$58.50</td><td>$2,340</td><td class="pnl-pos">+$12</td><td class="pnl-pos">+0.5%</td></tr>
-  <tr><td class="less-risk">Less Risk</td><td>JNJ</td><td>Johnson &amp; Johnson</td><td>Healthcare</td><td>Stock</td><td>20</td><td>$155.00</td><td>$162.40</td><td>$3,248</td><td class="pnl-pos">+$148</td><td class="pnl-pos">+4.8%</td></tr>
-  <tr><td class="less-risk">Less Risk</td><td>PG</td><td>Procter &amp; Gamble</td><td>Consumer Staples</td><td>Stock</td><td>15</td><td>$142.00</td><td>$149.75</td><td>$2,246</td><td class="pnl-pos">+$116</td><td class="pnl-pos">+5.5%</td></tr>
-  <tr><td class="less-risk">Less Risk</td><td>MMF</td><td>Fidelity Money Market</td><td>Money Market</td><td>Fund</td><td>100</td><td>$10.00</td><td>$10.00</td><td>$1,000</td><td>$0</td><td>0.0%</td></tr>
-
-  <!-- Moderate -->
-  <tr><td class="moderate">Moderate</td><td>GLD</td><td>SPDR Gold Shares</td><td>Commodities</td><td>ETF</td><td>30</td><td>$178.00</td><td>$185.50</td><td>$5,565</td><td class="pnl-pos">+$225</td><td class="pnl-pos">+4.2%</td></tr>
-  <tr><td class="moderate">Moderate</td><td>IAU</td><td>iShares Gold Trust</td><td>Commodities</td><td>ETF</td><td>60</td><td>$36.20</td><td>$37.80</td><td>$2,268</td><td class="pnl-pos">+$96</td><td class="pnl-pos">+4.4%</td></tr>
-  <tr><td class="moderate">Moderate</td><td>WMT</td><td>Walmart</td><td>Retail</td><td>Stock</td><td>25</td><td>$155.00</td><td>$168.20</td><td>$4,205</td><td class="pnl-pos">+$330</td><td class="pnl-pos">+8.5%</td></tr>
-  <tr><td class="moderate">Moderate</td><td>COST</td><td>Costco</td><td>Retail</td><td>Stock</td><td>10</td><td>$540.00</td><td>$572.30</td><td>$5,723</td><td class="pnl-pos">+$323</td><td class="pnl-pos">+6.0%</td></tr>
-  <tr><td class="moderate">Moderate</td><td>NEE</td><td>NextEra Energy</td><td>Utilities</td><td>Stock</td><td>35</td><td>$72.00</td><td>$76.40</td><td>$2,674</td><td class="pnl-pos">+$154</td><td class="pnl-pos">+6.1%</td></tr>
-
-  <!-- Growth -->
-  <tr><td class="growth">Growth</td><td>AAPL</td><td>Apple Inc</td><td>Technology</td><td>Stock</td><td>50</td><td>$172.00</td><td>$189.30</td><td>$9,465</td><td class="pnl-pos">+$865</td><td class="pnl-pos">+10.1%</td></tr>
-  <tr><td class="growth">Growth</td><td>MSFT</td><td>Microsoft Corp</td><td>Technology</td><td>Stock</td><td>30</td><td>$310.00</td><td>$378.90</td><td>$11,367</td><td class="pnl-pos">+$2,067</td><td class="pnl-pos">+22.2%</td></tr>
-  <tr><td class="growth">Growth</td><td>NVDA</td><td>NVIDIA Corp</td><td>Technology</td><td>Stock</td><td>20</td><td>$450.00</td><td>$875.40</td><td>$17,508</td><td class="pnl-pos">+$8,508</td><td class="pnl-pos">+94.5%</td></tr>
-  <tr><td class="growth">Growth</td><td>UNH</td><td>UnitedHealth Group</td><td>Healthcare</td><td>Stock</td><td>12</td><td>$480.00</td><td>$512.60</td><td>$6,151</td><td class="pnl-pos">+$391</td><td class="pnl-pos">+6.8%</td></tr>
-  <tr><td class="growth">Growth</td><td>AMZN</td><td>Amazon.com</td><td>Consumer Discretionary</td><td>Stock</td><td>18</td><td>$130.00</td><td>$178.25</td><td>$3,209</td><td class="pnl-pos">+$869</td><td class="pnl-pos">+37.1%</td></tr>
-
-  <!-- Aggressive -->
-  <tr><td class="aggressive">Aggressive</td><td>MSTR</td><td>MicroStrategy</td><td>Technology</td><td>Stock</td><td>15</td><td>$300.00</td><td>$1,245.00</td><td>$18,675</td><td class="pnl-pos">+$14,175</td><td class="pnl-pos">+315.0%</td></tr>
-  <tr><td class="aggressive">Aggressive</td><td>COIN</td><td>Coinbase Global</td><td>Financial</td><td>Stock</td><td>20</td><td>$180.00</td><td>$225.40</td><td>$4,508</td><td class="pnl-pos">+$908</td><td class="pnl-pos">+25.2%</td></tr>
-  <tr><td class="aggressive">Aggressive</td><td>EEM</td><td>iShares MSCI Emerging Markets</td><td>Emerging Markets</td><td>ETF</td><td>80</td><td>$38.50</td><td>$41.20</td><td>$3,296</td><td class="pnl-pos">+$216</td><td class="pnl-pos">+7.0%</td></tr>
-  <tr><td class="aggressive">Aggressive</td><td>ARKG</td><td>ARK Genomic Revolution ETF</td><td>Healthcare</td><td>ETF</td><td>45</td><td>$42.00</td><td>$38.75</td><td>$1,744</td><td class="pnl-neg">-$146</td><td class="pnl-neg">-7.7%</td></tr>
-  <tr><td class="aggressive">Aggressive</td><td>SOXS</td><td>Direxion Daily Semicon Bear</td><td>Technology</td><td>ETF</td><td>25</td><td>$18.00</td><td>$14.30</td><td>$358</td><td class="pnl-neg">-$93</td><td class="pnl-neg">-20.6%</td></tr>
+  <tr><td>current_price</td><td>float</td><td>Current price per share (simulates live price)</td></tr>
 </table>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>3. Prompts Used During Vibe Coding</h2>
 
+<span class="section-label">Day 1 — Foundation (2026-06-01)</span>
 <table>
   <tr>
     <th style="width:5%">#</th>
-    <th style="width:30%">Prompt</th>
+    <th style="width:30%">Prompt / Conversation Arc</th>
     <th style="width:25%">What It Produced</th>
     <th>Key Observation</th>
   </tr>
   <tr>
     <td>1</td>
-    <td>"Still stock portfolio but I want to bucketize stocks by risk factor and categories — Less Risk, Moderate, Growth, Aggressive. Sector Retail and other necessary service stocks are Moderate. Gold, treasury moderate so on so forth."</td>
+    <td>"Still stock portfolio but I want to bucketize stocks by risk factor — Less Risk, Moderate, Growth, Aggressive. Sector Retail and other necessary service stocks are Moderate. Gold, treasury moderate so on so forth."</td>
     <td>Full architecture: 4 risk buckets, 5-section UI, file structure, rebalancing math, build order</td>
-    <td>One natural-language prompt replaced a design doc. The AI asked clarifying questions (stack, data input, visualizations) before writing a line of code.</td>
+    <td>One natural-language prompt replaced a design doc. The AI asked clarifying questions before writing a line of code.</td>
   </tr>
   <tr>
     <td>2</td>
     <td>"Can we also add unit tests for this and other functions that we might add?"</td>
-    <td>30 unit tests across 2 test files — categorizer (16) and rebalancer (14). All passed on first run.</td>
-    <td>Adding tests mid-build (not after) caught a division-by-zero edge case in the rebalancer's proportional weight calculation immediately.</td>
+    <td>30 unit tests across 2 test files — all passed on first run</td>
+    <td>Adding tests mid-build caught a division-by-zero edge case in the rebalancer immediately.</td>
   </tr>
   <tr>
     <td>3</td>
-    <td>"Deliverable — can we work towards that? Submit a Google Doc explaining what you built. Include: project overview, datasets used, prompts you used during vibe coding, iterations you tried, and any learnings."</td>
-    <td>Full project documentation (this document), generated by reading the actual codebase and live portfolio stats.</td>
-    <td>The AI pulled real numbers ($110,139 portfolio value, bucket %) directly from running the code — not fabricated.</td>
+    <td>"Submit a Google Doc explaining what you built — project overview, datasets used, prompts, iterations, learnings."</td>
+    <td>Full project documentation (this file), generated from live codebase data</td>
+    <td>AI pulled real numbers from running the code — not fabricated content.</td>
   </tr>
   <tr>
     <td>4</td>
-    <td>"Let's create each of these sections as an independent table in the Google Doc."</td>
-    <td>HTML file with 5 independent, color-coded tables — copy-pasteable directly into Google Docs with formatting preserved.</td>
-    <td>Structured output request (tables vs prose) required zero back-and-forth — one prompt, done.</td>
+    <td>"What should I create from Claude Code perspective so when I start a new session tomorrow all this is taken into account as instructions?"</td>
+    <td>CLAUDE.md created; agent memory saved; prompts.md restructured by day</td>
+    <td>CLAUDE.md is the primary persistence layer — carries architecture decisions and conventions into every future session automatically.</td>
+  </tr>
+</table>
+
+<span class="section-label">Day 2 — Visualization &amp; Refactoring (2026-06-02)</span>
+<table>
+  <tr>
+    <th style="width:5%">#</th>
+    <th style="width:30%">Prompt / Conversation Arc</th>
+    <th style="width:25%">What It Produced</th>
+    <th>Key Observation</th>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>"I thought we had a plan we finished day 1 and going to continue day 2. Can you read that from claude.md?"</td>
+    <td>AI recalled full Day 2 plan from CLAUDE.md — zero re-explanation needed</td>
+    <td>First real test of the cross-session persistence setup. The AI picked up exactly where Day 1 ended, including bucket rules, slider constraints, and planned features.</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>"What is a treemap view?" + "Give me a visualization for idea on how task 1 will look"</td>
+    <td>Concept explanation + ASCII mockup of portfolio-as-treemap before any code was written</td>
+    <td>Asking "what is this?" before agreeing to build it is a habit worth keeping. The mockup let me mentally validate the UI before committing. This is faster than building then deciding you don't like it.</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>"Instead of pages navigation on the left side, would it be better to have tabs on the top?"</td>
+    <td>Two navigation options modeled (Option A: slim sidebar + tabs; Option B: no sidebar). Chose Option A.</td>
+    <td>The AI didn't resist the change to a Day 1 design decision — it modeled both options and let me decide. The best design decisions come from the human challenging defaults.</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>"I would like consistent blue shades, white and grey. Previous risk colors — if it fits with blue/grey you can keep them." [after AI misread the brief and proposed changing bucket colors]</td>
+    <td>AI distinguished chrome (page background, sidebar, cards → blue/grey) from data colors (risk buckets → unchanged). config.toml + CSS overrides applied to chrome only.</td>
+    <td>The AI misread my intent on first pass. Catching and correcting that before coding saved a rollback. Critical reading of AI responses — not just accepting the first interpretation — is a skill to develop.</td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td>"In my code I use these patterns heavily: Strategy, Pipeline, Facade, Factory, Dependency Injection, Registry. I want these added to your instruction and want you to use them when appropriate."</td>
+    <td>Patterns added to CLAUDE.md as standing instructions. Refactor implemented using all 6 patterns. app.py reduced from 306 → ~60 lines.</td>
+    <td>Highest-leverage prompt of Day 2. One instruction permanently reshaped the codebase — not just today's code but every future session. CLAUDE.md is not just documentation; it is the AI's standing orders.</td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td>"In general I am not a big fan of session state. I come from Angular — state managed via Angular Signals or NgRx Signal Store."</td>
+    <td>Session state redesigned: only raw inputs stored (raw_df, targets). PortfolioFacade derived on every run, never stored.</td>
+    <td>Bringing knowledge from a different framework (Angular) into a Streamlit discussion produced a better design. The AI mapped the mental model to what Streamlit can support rather than dismissing it.</td>
+  </tr>
+  <tr>
+    <td>11</td>
+    <td>"Can we add streamlit run as a skill for future use?" + [used Plan Mode before large refactor]</td>
+    <td>.claude/skills/run-app/SKILL.md created. streamlit added to PATH. Plan Mode used — plan reviewed and improved before any code was written.</td>
+    <td>Skills capture operational knowledge so you stop re-solving the same setup problem every session. Plan Mode as a pre-refactor checkpoint: the cost of pausing to review is low; the cost of a mid-implementation structural mistake is high.</td>
   </tr>
 </table>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>4. Iterations Tried</h2>
 
+<span class="section-label">Day 1 — Foundation</span>
 <table>
   <tr>
     <th style="width:20%">Iteration</th>
-    <th style="width:30%">What I Tried / Considered</th>
+    <th style="width:25%">What I Tried / Considered</th>
     <th style="width:25%">What Was Chosen Instead</th>
-    <th>Why</th>
+    <th>Why / How AI Collaboration Shaped This</th>
   </tr>
   <tr>
     <td><strong>Risk classification logic</strong></td>
-    <td>Sector-only rules (e.g. Technology → Growth for all tech stocks)</td>
-    <td>Two-layer lookup: ticker override first, then sector rule as fallback</td>
-    <td>MSTR is labeled Technology by sector but is essentially a Bitcoin proxy — sector alone misclassifies it. Ticker overrides capture asset-specific knowledge sector labels cannot.</td>
+    <td>Sector-only rules (Technology → Growth for all tech stocks)</td>
+    <td>Two-layer lookup: ticker override first, sector rule as fallback</td>
+    <td>I knew MSTR was a Bitcoin proxy even though its sector label said Technology. The AI built the two-layer framework; I supplied the override values. This was my first clear lesson in how AI and human domain knowledge divide the work: the AI structures the problem, the human fills in the judgment calls the AI cannot make independently.</td>
   </tr>
   <tr>
     <td><strong>Slider sum constraint</strong></td>
-    <td>Auto-adjust sibling sliders so the total always stays at 100% as the user drags</td>
+    <td>Auto-adjust sibling sliders so total always stays at 100% as user drags</td>
     <td>Independent sliders + real-time sum display + warning + disabled confirm button until sum = 100</td>
-    <td>Auto-adjust causes an infinite rerun loop in Streamlit — every slider change triggers a rerun, which changes other sliders, which triggers another rerun. Manual adjustment with clear feedback is more stable and more transparent.</td>
+    <td>I wanted auto-adjust — it felt like a better UX. The AI explained why it would break Streamlit's rerun model before writing a line of code. I didn't know this constraint existed. I asked why, understood the explanation, and then approved the alternative. Trusting the AI on framework-specific constraints I hadn't hit before was an early lesson in when to defer.</td>
   </tr>
   <tr>
     <td><strong>Rebalancing HOLD threshold</strong></td>
     <td>Label every stock with a non-zero delta as BUY or SELL</td>
-    <td>Deltas under $50 absolute value are labeled HOLD</td>
-    <td>Without a threshold, floating-point math produced absurd outputs like "SELL $2.14 of MMF." A $50 floor keeps the rebalancing table actionable rather than noisy.</td>
+    <td>Deltas under $50 labeled HOLD</td>
+    <td>I saw the raw output — "SELL $2.14 of MMF" — and immediately knew it was wrong in practice even if technically correct. I proposed the $50 threshold; the AI implemented it. This taught me that AI output needs human review not just for correctness but for usefulness. The code was right; the judgment about what makes output actionable was mine.</td>
   </tr>
   <tr>
     <td><strong>Delta distribution within buckets</strong></td>
     <td>Sell the most overweight stock in a bucket first (concentrated approach)</td>
-    <td>Distribute bucket delta proportionally across all stocks in that bucket by current weight</td>
-    <td>Concentrated selling would deplete NVDA entirely before touching MSFT or AAPL. Proportional distribution keeps the internal composition of each bucket unchanged — only the bucket size changes. This matches how a passive investor would rebalance.</td>
+    <td>Distribute bucket delta proportionally across all stocks by current weight</td>
+    <td>The AI presented both options neutrally and let me decide. I had to think about what kind of investor this app is for — passive vs. active. Proportional distribution matched the passive investor philosophy I was designing for. This was less about AI and more about me clarifying my own intent. Prompts that force a choice reveal assumptions you didn't know you had.</td>
+  </tr>
+</table>
+
+<span class="section-label">Day 2 — Visualization &amp; Refactoring</span>
+<table>
+  <tr>
+    <th style="width:20%">Iteration</th>
+    <th style="width:28%">What I Tried / Considered</th>
+    <th style="width:27%">What Was Chosen Instead</th>
+    <th>Why / How AI Collaboration Shaped This</th>
   </tr>
   <tr>
-    <td><strong>Navigation structure</strong></td>
-    <td>Multi-page app using Streamlit's pages/ folder, or st.tabs()</td>
-    <td>st.sidebar.radio() with 5 sections in a single app.py</td>
-    <td>Sidebar navigation matches the "dashboard" mental model for a financial app. Single-file approach shares session state (portfolio df, confirmed targets) naturally without cross-page state management complexity.</td>
+    <td><strong>Portfolio Overview layout</strong></td>
+    <td>Table-first layout (large holdings grid as primary view)</td>
+    <td>Treemap as dominant visual, holdings table collapsed in an expander below</td>
+    <td>I asked "what is a treemap?" and requested an ASCII mockup before deciding. The visual-first layout emerged from understanding the option first. Brainstorming before approving prevented building something I'd regret.</td>
+  </tr>
+  <tr>
+    <td><strong>Navigation</strong></td>
+    <td>Sidebar radio navigation (Day 1 default)</td>
+    <td>st.tabs() across the top; sidebar holds only file upload and filters</td>
+    <td>I challenged the Day 1 design. The AI modeled both a slim-sidebar option and a no-sidebar option — I chose Option A. Human-driven course correction, AI-modeled tradeoffs.</td>
+  </tr>
+  <tr>
+    <td><strong>UI Theme</strong></td>
+    <td>Streamlit defaults (white). AI first pass: change risk bucket colors to blue shades.</td>
+    <td>Blue/grey chrome (page background, sidebar, cards, chart backgrounds) via config.toml + CSS. Risk bucket colors kept unchanged — they carry semantic meaning.</td>
+    <td>AI misread my brief on first pass — proposed changing data colors instead of chrome. I corrected it before any code was written. Lesson: AI interprets the stated words, not the intent behind them. Human review catches the gap.</td>
+  </tr>
+  <tr>
+    <td><strong>Architecture: app.py</strong></td>
+    <td>Monolithic app.py (306 lines, all 5 sections inline, flat utility imports)</td>
+    <td>views/ modules (one render() per tab) + utils/ with Strategy, Pipeline, Facade, Factory, Registry patterns. app.py → ~60-line router.</td>
+    <td>I injected my engineering philosophy into CLAUDE.md as standing instructions: "use Strategy, Pipeline, Facade, Factory, DI, and Registry when appropriate." This single instruction reshaped the entire refactor. The AI applied all 6 patterns correctly across 8 new files.</td>
+  </tr>
+  <tr>
+    <td><strong>Session state design</strong></td>
+    <td>Store enriched DataFrame in session state (full app state persisted)</td>
+    <td>Store only raw inputs (raw_df, targets). PortfolioFacade derived on every run — never stored.</td>
+    <td>I brought my Angular/NgRx background into the discussion — "I prefer centralized state services, not scattered session storage." The AI mapped this mental model to Streamlit's constraints and found the nearest equivalent: inputs-only state, everything else derived.</td>
+  </tr>
+  <tr>
+    <td><strong>Portfolio Health Score</strong></td>
+    <td>No baseline comparison — just displaying current allocation numbers</td>
+    <td>3 benchmark comparison cards (Conservative / Balanced / Aggressive Growth) using Registry + Factory patterns. Score 0–100 with label and per-bucket deviation.</td>
+    <td>I specified "show 3 comparisons at once" after seeing all options during brainstorm. The benchmark definitions used the Registry pattern I had already instructed the AI to apply — the architecture matched the feature naturally.</td>
   </tr>
 </table>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>5. Learnings and Observations</h2>
+<p style="font-size:10pt; color:#555;">Reflections on using Claude Code as an agentic AI tool to build this application — what shaped my thinking, what I'd do differently, what I now do by default.</p>
 
+<span class="section-label">Day 1 — Learning to use the tool</span>
 <table>
   <tr>
     <th style="width:22%">Category</th>
     <th>Observation</th>
   </tr>
   <tr>
-    <td><strong>Plan before code</strong></td>
-    <td>The most valuable moment in the workflow was entering Plan Mode before any file was created. Claude proposed the architecture, data model, rebalancing math with a worked example, and build order — all for approval before touching a file. Implementation was then fast and linear with no wasted rework.</td>
+    <td><strong>Plan before code — initial discomfort, then appreciation</strong></td>
+    <td>Entering Plan Mode before writing any code felt slow at first — I wanted to start building. But the architecture session paid for itself immediately. No wasted rework, no mid-implementation "wait, how does this connect to X?" moments. I now treat Plan Mode as a non-negotiable first step for anything touching more than a few files. The discomfort of pausing is a much smaller cost than the cost of reworking a wrong direction.</td>
   </tr>
   <tr>
-    <td><strong>Tests early, not after</strong></td>
-    <td>Asking for unit tests before the first standalone run changed the quality of the code. The rebalancer's HOLD threshold, proportional distribution, and sign logic were all verified immediately. It also caught a subtle edge case: the proportional weight calculation needed a guard for empty buckets (division by zero).</td>
+    <td><strong>Tests as an afterthought that became a quality gate</strong></td>
+    <td>I asked for tests almost as an add-on ("can we also add unit tests?") without fully anticipating the impact. The tests caught a real bug — division by zero in the proportional weight calculation for empty buckets — that would have been a silent failure in production. I now understand why the convention in CLAUDE.md says "add tests for any new function in categorizer.py or rebalancer.py." It's not ceremony; it's a quality gate that pays back immediately.</td>
   </tr>
   <tr>
-    <td><strong>AI held architecture in context</strong></td>
-    <td>BUCKET_COLORS was defined once in categorizer.py and imported consistently by app.py and all chart configurations — never duplicated. Across file creation, module imports, session state design, and UI layout, Claude maintained consistency without being reminded.</td>
+    <td><strong>Every prompt encodes a value judgment</strong></td>
+    <td>"Can we add unit tests?" was also "I want this code to be correct and verifiable." I didn't consciously frame it that way, but reflecting back, every prompt I wrote encoded a value: correctness, usability, maintainability, structure. The AI acts on stated intent — the values behind that intent come from me. Being deliberate about what I'm asking for is the same as being deliberate about what I'm building.</td>
   </tr>
   <tr>
-    <td><strong>Risk classification needs human judgment</strong></td>
-    <td>The ticker override table (e.g. MSTR → Aggressive despite Technology sector) reflects a human call about what those assets actually are, not just their label. Claude built the framework; domain knowledge came from the human. The AI cannot independently decide that MicroStrategy is a Bitcoin proxy.</td>
+    <td><strong>Domain knowledge is the irreplaceable human contribution</strong></td>
+    <td>The AI built the classification framework. I supplied the overrides — MSTR is a Bitcoin proxy, COIN is speculative finance, JNJ is a stable blue-chip despite being in Healthcare. None of these calls come from sector labels; they come from understanding what the assets actually are. The AI cannot make these calls independently. This is the part of the collaboration that cannot be delegated, and recognizing that early changed how I thought about my role in the process.</td>
   </tr>
   <tr>
-    <td><strong>Prompts are design decisions</strong></td>
-    <td>"Can we add unit tests?" is also "I want this code to be correct and verifiable." Every prompt in this project was a design choice disguised as a request. The AI acts on stated intent — the values behind that intent come from the human.</td>
+    <td><strong>CLAUDE.md setup felt like overhead — until Day 2</strong></td>
+    <td>At the end of Day 1, spending time on CLAUDE.md and agent memory felt like admin work. The return came at the very first message of Day 2 — I opened with "can you read the plan from claude.md?" and got back the full Day 2 scope, conventions, and constraints with zero re-explanation. The investment compounds: every convention I add to CLAUDE.md now saves explanation in every future session. I'd make this a Day 1 habit for any multi-session project.</td>
+  </tr>
+</table>
+
+<span class="section-label">Day 2 — Learning to direct the tool</span>
+<table>
+  <tr>
+    <th style="width:22%">Category</th>
+    <th>Observation</th>
   </tr>
   <tr>
-    <td><strong>Iteration is cheap, direction is not</strong></td>
-    <td>Changing a chart type, adding a filter, or tweaking the HOLD threshold took seconds. Changing the fundamental structure (e.g. sidebar nav → tabs) would touch many files. The upfront planning session paid for itself by locking in the right direction early.</td>
+    <td><strong>Understand before you approve</strong></td>
+    <td>Asking "what is a treemap?" before agreeing to build one, and requesting an ASCII mockup before Plan Mode, changed the quality of what I approved. I now treat "show me what this looks like" as a standard step before any visualization or layout decision. Building and then deciding you don't like it is far more expensive.</td>
   </tr>
   <tr>
-    <td><strong>You must understand the math to trust it</strong></td>
-    <td>Verifying the rebalancing engine required working through the proportional distribution example on paper before trusting the output. The AI wrote correct code — but knowing it was correct required understanding the underlying math independently.</td>
+    <td><strong>Injecting engineering philosophy as standing instructions</strong></td>
+    <td>Adding Strategy, Pipeline, Facade, Factory, Dependency Injection, and Registry to CLAUDE.md as standing instructions was the highest-leverage action of Day 2. One prompt permanently reshaped the codebase. The AI applied all 6 patterns correctly across 8 new files without further prompting. CLAUDE.md is not documentation — it is the AI's standing orders.</td>
   </tr>
   <tr>
-    <td><strong>Synthetic data is a deliberate tradeoff</strong></td>
-    <td>Using a static CSV instead of a live market data API (Yahoo Finance, Alpha Vantage) removed API key complexity and made the app work offline. The tradeoff is that "current prices" are frozen. A production version would replace the CSV with a real-time data feed.</td>
+    <td><strong>AI interprets words, not intent — read critically</strong></td>
+    <td>When I asked for a "blue/grey theme," the AI first proposed changing the risk bucket colors — technically a blue/grey palette, but wrong in context. I caught this before any code was written and corrected it. Reviewing AI proposals critically before approving them is not a sign of distrust — it is the job of the human in the loop.</td>
   </tr>
   <tr>
-    <td><strong>Using Claude Agent architecture to persist workflow state across sessions</strong></td>
+    <td><strong>Domain knowledge from other frameworks improves AI decisions</strong></td>
+    <td>Bringing my Angular/NgRx background into the Streamlit session state discussion produced a better architecture than if I had just accepted the AI's default. The AI mapped my mental model to what Streamlit can support rather than dismissing it. Cross-framework knowledge is an asset in AI-assisted development, not an obstacle.</td>
+  </tr>
+  <tr>
+    <td><strong>Plan Mode before large refactors</strong></td>
+    <td>Using Plan Mode before the app.py refactor let me catch two things before any code was written: the Facade might grow too large (documented a decomposition path), and the session state approach needed rethinking. Both were addressed in the plan. This is now a default step before any change touching more than 3 files.</td>
+  </tr>
+  <tr>
+    <td><strong>Skills: stop re-solving the same setup problem</strong></td>
+    <td>Adding a /run skill for the Streamlit launch command means future sessions don't waste time re-discovering the command or re-setting up PATH. Skills capture operational knowledge. CLAUDE.md captures architectural knowledge. Together they make the AI a consistent collaborator, not a tool you have to re-orient every session.</td>
+  </tr>
+  <tr>
+    <td><strong>What I'd ask an instructor</strong></td>
     <td>
-      This project spans 3 days. To avoid re-explaining context at the start of every session, Claude Code's agent memory and <code>CLAUDE.md</code> were used as a two-layer persistence system:<br><br>
-      <strong>CLAUDE.md</strong> (project-level) — auto-loaded by Claude Code at the start of every session. Contains the full architecture, iteration plan by day, coding conventions, and design decisions that must not be changed without deliberate intent.<br><br>
-      <strong>Agent memory</strong> (user-level) — Claude's own memory system stores project state, user working style, and workflow preferences (e.g. always update prompts.md, HTML is the doc source of truth). This persists even across different machines or IDEs.<br><br>
-      Together these mean Day 2 and Day 3 sessions begin with full context — no re-explaining the stack, the risk bucket rules, or the prompt-logging convention. The AI picks up exactly where the previous session ended.
+      Areas where I'm less confident in my agentic AI usage and would value feedback:<br><br>
+      1. <strong>CLAUDE.md scope</strong> — Am I putting the right things in CLAUDE.md vs. agent memory? Is there a cleaner separation?<br>
+      2. <strong>Plan Mode frequency</strong> — I used it for the large refactor but not for smaller changes. What's the right threshold?<br>
+      3. <strong>Feedback loops</strong> — I caught the theme misinterpretation and the session state issue myself. Are there techniques to make the AI surface those ambiguities proactively, before I have to?
     </td>
   </tr>
 </table>
