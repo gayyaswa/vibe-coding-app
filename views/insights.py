@@ -3,8 +3,8 @@ from typing import Optional
 
 import streamlit as st
 
-from utils.facade import PortfolioFacade
-from utils.insights import InsightsFacade
+from portfolio.facade import PortfolioFacade
+from portfolio.insights import InsightsFacade
 
 _DISABLED_MSG = """
 <div style="background:#EEF2F7;border:1px solid #B0C4D8;border-radius:8px;padding:16px 20px;margin-bottom:16px;">

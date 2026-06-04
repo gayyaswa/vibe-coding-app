@@ -2,8 +2,8 @@ import os
 import pandas as pd
 import streamlit as st
 
-from utils.categorizer import BUCKET_ORDER
-from utils.facade import PortfolioFacade
+from portfolio.classification import BUCKET_ORDER
+from portfolio.facade import PortfolioFacade
 
 SAMPLE_CSV = os.path.join(os.path.dirname(__file__), "data", "portfolio_sample.csv")
 REQUIRED_COLUMNS = {"ticker", "name", "sector", "asset_type", "shares", "purchase_price", "current_price"}
@@ -88,9 +88,9 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Portfolio Overview",
     "Allocation Dashboard",
     "Rebalancing Engine",
+    "AI Insights",
     "Sector Breakdown",
     "Gain / Loss",
-    "AI Insights",
 ])
 
 with tab1:
@@ -105,10 +105,10 @@ with tab3:
     rebalancing.render(facade, targets=st.session_state["targets"])
 
 with tab4:
-    sector.render(facade)
+    insights.render(facade, targets=st.session_state["targets"])
 
 with tab5:
-    gainloss.render(facade, filters=filters)
+    sector.render(facade)
 
 with tab6:
-    insights.render(facade, targets=st.session_state["targets"])
+    gainloss.render(facade, filters=filters)

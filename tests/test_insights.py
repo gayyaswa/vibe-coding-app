@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from utils.insights import (
+from portfolio.insights import (
     INSIGHT_REGISTRY,
     InsightFactory,
     InsightsFacade,
@@ -58,7 +58,7 @@ def test_factory_unknown_type():
 
 def test_rebalancing_context_contains_actions(sample_df, sample_rebal_df):
     mock_llm = MagicMock()
-    with patch("utils.insights.RebalancingRationaleInsight.__init__", return_value=None):
+    with patch("portfolio.insights.RebalancingRationaleInsight.__init__", return_value=None):
         strategy = RebalancingRationaleInsight.__new__(RebalancingRationaleInsight)
     targets = {"Growth": 35.0, "Moderate": 30.0, "Less Risk": 25.0, "Aggressive": 10.0}
     context = strategy.build_context(sample_df, sample_rebal_df, targets)
@@ -70,7 +70,7 @@ def test_rebalancing_context_contains_actions(sample_df, sample_rebal_df):
 
 def test_sector_context_contains_sectors(sample_df):
     mock_llm = MagicMock()
-    with patch("utils.insights.SectorConcentrationInsight.__init__", return_value=None):
+    with patch("portfolio.insights.SectorConcentrationInsight.__init__", return_value=None):
         strategy = SectorConcentrationInsight.__new__(SectorConcentrationInsight)
     context = strategy.build_context(sample_df, None, None)
     assert "Technology" in context
@@ -80,7 +80,7 @@ def test_sector_context_contains_sectors(sample_df):
 
 
 def test_missing_targets_raises(sample_df):
-    with patch("utils.insights.RebalancingRationaleInsight.__init__", return_value=None):
+    with patch("portfolio.insights.RebalancingRationaleInsight.__init__", return_value=None):
         strategy = RebalancingRationaleInsight.__new__(RebalancingRationaleInsight)
     with pytest.raises(ValueError, match="Targets must be set"):
         strategy.build_context(sample_df, None, None)

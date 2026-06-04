@@ -2,14 +2,14 @@ from typing import Dict
 
 import pandas as pd
 
-from utils.categorizer import assign_risk_bucket
-from utils.health import HealthScoreFactory, HealthScore
-from utils.pipeline import PortfolioPipeline
-from utils.rebalancer import bucket_summary, compute_rebalancing
+from portfolio.classification import assign_risk_bucket
+from portfolio.health import HealthScoreFactory, HealthScore
+from portfolio.pipeline import PortfolioPipeline
+from portfolio.rebalancing import bucket_summary, compute_rebalancing
 
 
 class PortfolioFacade:
-    """Single entry point for all views. Views never import utils directly."""
+    """Single entry point for all views (Facade pattern); wraps classification, rebalancing, health, and insights subsystems."""
 
     def __init__(self, raw_df: pd.DataFrame):
         pipeline = PortfolioPipeline([assign_risk_bucket])

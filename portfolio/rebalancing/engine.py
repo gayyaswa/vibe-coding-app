@@ -1,7 +1,8 @@
 import pandas as pd
-from utils.categorizer import BUCKET_ORDER
 
-HOLD_THRESHOLD = 50.0  # dollars — deltas smaller than this are labeled HOLD
+from portfolio.classification import BUCKET_ORDER
+
+HOLD_THRESHOLD = 50.0  # Prevents micro-transactions; deltas below this dollar amount stay as HOLD
 
 
 def bucket_summary(df: pd.DataFrame, targets: dict) -> pd.DataFrame:
@@ -36,6 +37,8 @@ def compute_rebalancing(df: pd.DataFrame, targets: dict) -> pd.DataFrame:
         bucket_delta = bucket_target - bucket_current
 
         for _, row in bucket_df.iterrows():
+            # Distributes bucket delta proportionally by current stock weight within the bucket,
+            # not equally — preserves relative position sizes when rebalancing
             if bucket_current > 0:
                 weight = row["market_value"] / bucket_current
             else:
@@ -58,24 +61,3 @@ def compute_rebalancing(df: pd.DataFrame, targets: dict) -> pd.DataFrame:
             })
 
     return pd.DataFrame(result_rows)
-
-
-if __name__ == "__main__":
-    import os
-    import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    import pandas as pd
-    from utils.categorizer import assign_risk_bucket
-
-    csv_path = os.path.join(os.path.dirname(__file__), "..", "data", "portfolio_sample.csv")
-    raw = pd.read_csv(csv_path)
-    df = assign_risk_bucket(raw)
-
-    targets = {"Less Risk": 25.0, "Moderate": 25.0, "Growth": 35.0, "Aggressive": 15.0}
-    summary = bucket_summary(df, targets)
-    print("\n--- Bucket Summary ---")
-    print(summary.to_string(index=False))
-
-    rebal = compute_rebalancing(df, targets)
-    print("\n--- Rebalancing Actions ---")
-    print(rebal[["ticker", "risk_bucket", "current_value", "delta", "action"]].to_string(index=False))

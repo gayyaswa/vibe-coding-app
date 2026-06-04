@@ -2,8 +2,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from utils.categorizer import BUCKET_COLORS
-from utils.facade import PortfolioFacade
+from portfolio.classification import BUCKET_COLORS
+from portfolio.facade import PortfolioFacade
 from views import apply_theme
 
 

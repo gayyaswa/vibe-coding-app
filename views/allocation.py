@@ -5,8 +5,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from utils.categorizer import BUCKET_COLORS, BUCKET_ORDER
-from utils.facade import PortfolioFacade
+from portfolio.classification import BUCKET_COLORS, BUCKET_ORDER
+from portfolio.facade import PortfolioFacade
 from views import apply_theme
 
 

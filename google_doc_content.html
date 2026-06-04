@@ -24,7 +24,7 @@
 <body>
 
 <h1>Stock Portfolio Risk Analyzer</h1>
-<p class="meta">Vibe Coding Project &nbsp;|&nbsp; June 1–3, 2026 &nbsp;|&nbsp; Stack: Python · Streamlit · Pandas · Plotly · LangChain · Anthropic &nbsp;|&nbsp; Days completed: 3 of 3</p>
+<p class="meta">Vibe Coding Project &nbsp;|&nbsp; June 1–3, 2026 &nbsp;|&nbsp; Stack: Python · Streamlit · Pandas · Plotly · LangChain · Anthropic &nbsp;|&nbsp; Days completed: 4 of 4</p>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>1. Project Overview</h2>
@@ -65,14 +65,14 @@
   <tr>
     <td><strong>Architecture</strong></td>
     <td>
-      <code>utils/</code> — Pipeline, Strategy (categorizer), Facade (PortfolioFacade), Factory (HealthScoreFactory), Registry (BENCHMARK_REGISTRY)<br>
-      <code>views/</code> — one render() function per tab section<br>
-      <code>app.py</code> — ~60-line router (was 306 lines Day 1)
+      <a href="https://github.com/gayyaswa/vibe-coding-app/tree/main/portfolio/"><code>portfolio/</code></a> — Pipeline, Strategy (classification), Facade (PortfolioFacade), Factory (HealthScoreFactory), Registry (BENCHMARK_REGISTRY, INSIGHT_REGISTRY)<br>
+      <a href="https://github.com/gayyaswa/vibe-coding-app/tree/main/views/"><code>views/</code></a> — one render() function per tab section<br>
+      <a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/app.py"><code>app.py</code></a> — ~115-line router
     </td>
   </tr>
   <tr>
     <td><strong>Tests</strong></td>
-    <td>48 unit tests across 4 test files (test_categorizer.py · test_rebalancer.py · test_health.py · test_insights.py). All pass.</td>
+    <td>48 unit tests across 4 test files (<a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/tests/test_categorizer.py">test_categorizer.py</a> · <a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/tests/test_rebalancer.py">test_rebalancer.py</a> · <a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/tests/test_health.py">test_health.py</a> · <a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/tests/test_insights.py">test_insights.py</a>). All pass.</td>
   </tr>
   <tr>
     <td><strong>Total portfolio value</strong></td>
@@ -84,7 +84,7 @@
 <h2>2. Dataset Used</h2>
 
 <p>
-  Sample data: <a href="data/portfolio_sample.csv"><code>data/portfolio_sample.csv</code></a> — 20 synthetic holdings (5 per risk bucket) covering stocks, ETFs, and money market funds across 8 sectors. Prices are static (no live feed); this was a deliberate tradeoff to keep the app self-contained without API keys.
+  Sample data: <a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/data/portfolio_sample.csv"><code>data/portfolio_sample.csv</code></a> — 20 synthetic holdings (5 per risk bucket) covering stocks, ETFs, and money market funds across 8 sectors. Prices are static (no live feed); this was a deliberate tradeoff to keep the app self-contained without API keys.
 </p>
 
 <span class="section-label">CSV Schema</span>
@@ -233,6 +233,46 @@
     <td>"Can we create individual plan detail and also link it part of day1, day2, day3 documentation to show the instructors effective use of such detailed planning? Also add it to the Claude convention."</td>
     <td>docs/plan-day1.md, plan-day2.md, plan-day3.md created — each capturing the thinking, decisions, and learnings from that session's planning arc. Section 6 added to this document. CLAUDE.md updated with planning convention.</td>
     <td>Planning documents are the most honest record of a project: what was considered and rejected, not just what was built. They show how thinking evolved — which is the part of AI-assisted development that's hardest to demonstrate from the code alone.</td>
+  </tr>
+</table>
+
+<span class="section-label">Day 4 — Architecture &amp; Documentation (2026-06-03)</span>
+<table>
+  <tr>
+    <th style="width:5%">#</th>
+    <th style="width:30%">Prompt / Conversation Arc</th>
+    <th style="width:25%">What It Produced</th>
+    <th>Key Observation</th>
+  </tr>
+  <tr>
+    <td>18</td>
+    <td>"I would like to see different modules relevant to the domain rather than one simple utils module. Each class goes to its own Python file."</td>
+    <td><code>utils/</code> renamed to <a href="https://github.com/gayyaswa/vibe-coding-app/tree/main/portfolio/"><code>portfolio/</code></a>. 4 sub-packages: <code>classification/</code>, <code>rebalancing/</code>, <code>health/</code>, <code>insights/</code>. Each class in its own snake_case file. 48 tests pass after migration.</td>
+    <td>Domain-organized packages communicate intent to anyone reading the codebase for the first time. <code>portfolio/insights/insight_strategy.py</code> is immediately locatable; <code>utils/insights.py</code> is not.</td>
+  </tr>
+  <tr style="background:#f2f7ff;">
+    <td>19</td>
+    <td>"Let's also comment in the code some of the important business logic. Update the Claude convention to include all this as project conventions."</td>
+    <td>Inline comments added to 6 key locations. Class docstrings on every class. Comment convention added to CLAUDE.md: comment the WHY, not the WHAT.</td>
+    <td>The best comments explain constraints invisible in the code. A reader can see <code>HOLD_THRESHOLD = 50.0</code>; they cannot see that removing it floods users with micro-transaction noise. The comment closes that gap.</td>
+  </tr>
+  <tr>
+    <td>20</td>
+    <td>"I need a video script for a 5-minute walkthrough — key learnings, technical acumen, insight prompts that led to high-quality Architecture, Design, reusability, testability."</td>
+    <td>5-minute video script saved to <code>docs/video-script.md</code> (gitignored). Credits engineering experience as the source of the patterns; AI as the implementation accelerator.</td>
+    <td>Attribution in the script needed two rounds of revision. The accurate version is clear: the design patterns came from production engineering experience, documented in CLAUDE.md before any code was written. That distinction is the thesis of the video.</td>
+  </tr>
+  <tr style="background:#f2f7ff;">
+    <td>21</td>
+    <td>"Update README with app overview, GIF, Architecture and sequence diagrams. Google Doc internal file references should become absolute GitHub URLs."</td>
+    <td>README rewritten: Quick Start, 3 Mermaid diagrams (app layers / data flow / domain module layout), design patterns table. All internal refs converted to <code>https://github.com/gayyaswa/vibe-coding-app/blob/main/</code> URLs.</td>
+    <td>Mermaid diagrams render natively on GitHub — they are the architecture documentation, not a link to it. The README communicates the architecture before a viewer reads a line of code.</td>
+  </tr>
+  <tr>
+    <td>22</td>
+    <td>"Let's execute this plan?" [referencing a pre-written plan for cross-project custom commands] + "I generated demo.gif using the command — can we update the readme with it?"</td>
+    <td>Two user-level commands created at <code>~/.claude/commands/</code>: <code>generate-demo-gif.md</code> and <code>init-readme.md</code>. <code>/generate-demo-gif</code> run to produce <code>docs/demo.gif</code> (200KB, all 6 tabs). README already wired the GIF automatically.</td>
+    <td>User-level commands at <code>~/.claude/commands/</code> are available across every Claude Code project — a workflow recipe built once, carried everywhere. Different from project-level skills: project skills capture operational knowledge for one project; user commands encode repeatable patterns across all projects.</td>
   </tr>
 </table>
 
@@ -464,6 +504,34 @@
   </tr>
 </table>
 
+<span class="section-label">Day 4 — Architecture hardening and documentation</span>
+<table>
+  <tr>
+    <th style="width:22%">Category</th>
+    <th>Observation</th>
+  </tr>
+  <tr>
+    <td><strong>Domain naming is the first act of documentation</strong></td>
+    <td>Renaming <code>utils/</code> to <code>portfolio/</code> changed nothing in the code's behavior. It changed everything about how the code reads. A reader who has never seen this project knows immediately that <code>portfolio/classification/</code> is where risk bucketing lives and <code>portfolio/insights/</code> is where the AI layer lives. That navigability comes for free when the package name matches the domain.</td>
+  </tr>
+  <tr style="background:#f2f7ff;">
+    <td><strong>One class per file is a contract with your future self</strong></td>
+    <td>Before the split, finding <code>InsightsFacade</code> required opening <code>utils/insights.py</code> and scrolling. After the split, it lives in <code>portfolio/insights/insights_facade.py</code> — the file name is the class name. For a codebase that grows over time, that contract eliminates mental overhead. The naming convention in CLAUDE.md ensures every future class follows the same rule without discussion.</td>
+  </tr>
+  <tr>
+    <td><strong>Class docstrings are domain documentation, not code documentation</strong></td>
+    <td>The docstrings added on Day 4 don't explain methods — they explain what each class IS in the domain and which design pattern it implements. <code>"""Single entry point for all views (Facade pattern); wraps classification, rebalancing, health, and insights."""</code> tells a reader more in one line than a page of method-level comments would. Good class-level documentation compresses the mental model.</td>
+  </tr>
+  <tr style="background:#f2f7ff;">
+    <td><strong>The video script forced honest attribution</strong></td>
+    <td>Writing a script that would be recorded on camera forced a precision about what came from me vs. the AI that day-to-day coding conversations don't require. The first draft had the AI discovering patterns through critique. The accurate version is: I specified the patterns from production experience; the AI implemented them. Getting that right matters for anyone evaluating AI-assisted development as a practice — not just a tool.</td>
+  </tr>
+  <tr>
+    <td><strong>Public GitHub presence is a design constraint, not an afterthought</strong></td>
+    <td>Converting internal file references to absolute GitHub URLs, writing a README with Mermaid diagrams, and producing a video script all follow from one decision: this project is public and its audience includes people who will never run it locally. Designing for that audience — not just for your own local workflow — changes what you build and how you explain it.</td>
+  </tr>
+</table>
+
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>6. Planning Documents</h2>
 <p style="font-size:10pt; color:#555;">Detailed planning sessions preceded each day's implementation. These documents capture the architectural thinking — what was brainstormed, what was considered and rejected, and the reasoning behind every key decision. They are the record of how the app was designed, not just what it became.</p>
@@ -477,21 +545,27 @@
   </tr>
   <tr>
     <td><strong>Day 1</strong></td>
-    <td><code>docs/plan-day1.md</code></td>
+    <td><a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/docs/plan-day1.md"><code>docs/plan-day1.md</code></a></td>
     <td>Greenfield architecture: 4 risk buckets, two-layer classification (ticker override + sector), rebalancing math (proportional distribution, $50 HOLD threshold), slider sum constraint, 5-section Streamlit structure</td>
     <td>Planning in natural language replaced a design doc. The AI asked clarifying questions that forced me to articulate decisions I hadn't consciously made yet. By the end of the first conversation, the full architecture was clear — not because I planned it in advance, but because back-and-forth surfaced it.</td>
   </tr>
   <tr>
     <td><strong>Day 2</strong></td>
-    <td><code>docs/plan-day2.md</code></td>
+    <td><a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/docs/plan-day2.md"><code>docs/plan-day2.md</code></a></td>
     <td>views/ refactor (306 → 60 line app.py), 6 design patterns as standing instructions, navigation redesign (sidebar → tabs), blue/grey theme (chrome vs. data colors), session state inputs-only approach, Portfolio Health Score (Registry + Factory)</td>
     <td>One CLAUDE.md instruction permanently reshaped 8 files. Explicit Plan Mode session before the large refactor caught two structural issues before any code was written. Plan Mode as a pre-refactor checkpoint is now a fixed habit.</td>
   </tr>
   <tr>
     <td><strong>Day 3</strong></td>
-    <td><code>docs/plan-day3.md</code></td>
+    <td><a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/docs/plan-day3.md"><code>docs/plan-day3.md</code></a></td>
     <td>Sunburst visualization (vs. packed bubbles, icicle), tab CSS polish, slider delta UX, LangChain LCEL architecture (vs. raw Anthropic SDK), DI pattern for LLM injection, open-source key management (Streamlit secrets), streaming + session caching UX, visible-but-disabled graceful degradation</td>
     <td>Deeper planning = zero mid-implementation reversals. Every decision was made and recorded before touching code. The tradeoff between LangChain portability and Anthropic prompt caching was consciously accepted — not defaulted into.</td>
+  </tr>
+  <tr style="background:#f2f7ff;">
+    <td><strong>Day 4</strong></td>
+    <td><a href="https://github.com/gayyaswa/vibe-coding-app/blob/main/docs/plan-day4.md"><code>docs/plan-day4.md</code></a></td>
+    <td>Module restructuring (utils/ → portfolio/ domain sub-packages, one class per file), Python naming conventions, class docstrings, business logic comments, CLAUDE.md consolidation, README architecture diagrams (Mermaid), Google Doc GitHub URL conversion, video script production</td>
+    <td>Architecture hardening and documentation are themselves design decisions, not cleanup. The planning session for Day 4 produced a video script, README structure, and module layout before any code was touched — the same pattern that made Days 2 and 3 clean to implement.</td>
   </tr>
 </table>
 

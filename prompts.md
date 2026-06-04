@@ -180,3 +180,59 @@ Observation: Asking "who else will run this?" before shipping changed the design
 
 Result: docs/plan-day1.md, plan-day2.md, plan-day3.md created capturing planning thinking per day. Section 6 (Planning Documents) added to google_doc_content.html. CLAUDE.md updated with planning convention.
 Observation: Planning documents are the most honest record of a project. They show what was considered and rejected — the reasoning trail — which is harder to reconstruct from code alone. For a course submission demonstrating AI-assisted development, the planning record is as important as the final product.
+
+---
+
+## Day 4 — Architecture & Documentation (2026-06-03)
+*Focus: Module restructuring, code conventions, public GitHub presence, video script*
+
+---
+
+**Arc 1 — Domain module architecture**
+> "I would like to see different modules relevant to the domain rather than what we have now one simple utils module. For example, Insight can be a module and I want to see each class goes to its own python file so InsightStrategy base class on own file and the concrete different insight strategy implementations on their own files. Similarly for all other files let's come up with a detail plan."
+
+Result: `utils/` renamed to `portfolio/` (domain-named). Split into 4 sub-packages: `classification/`, `rebalancing/`, `health/`, `insights/`. Each class in its own file named in full snake_case of the class name. All 48 tests still pass after migration.
+Observation: Renaming `utils/` to `portfolio/` is a one-word change that communicates the domain clearly. Flat modules feel convenient; domain-organized packages communicate intent and make the codebase navigable to anyone who hasn't read it before.
+
+---
+
+**Arc 2 — Python naming conventions and class docstrings**
+> "As far as Python file naming goes are we following a convention — I see in some cases _ is used. Also, can we add a comment to each class what it does in the code?"
+
+Result: Convention formalized: one-class-per-file, file name = full snake_case of class name (e.g. `HealthScoreFactory` → `health_score_factory.py`). One-line docstring on every class stating its role and design pattern. Added to CLAUDE.md as standing conventions.
+Observation: Naming consistency is not stylistic — it's navigational. Knowing `HealthScoreFactory` lives in `health_score_factory.py` means you can find any class in the codebase without searching.
+
+---
+
+**Arc 3 — Business logic comments**
+> "Let's also comment in the code some of the important business logic that we have implemented. Let's also update the Claude convention to include all this recommendations."
+
+Result: Inline comments added to 6 key non-obvious locations: HOLD_THRESHOLD, proportional delta distribution, ticker-over-sector priority, sum-to-100 slider enforcement, LCEL chain construction, pipeline step sequencing. All added to CLAUDE.md as a mandatory convention with a clear rule: comment the WHY, not the WHAT.
+Observation: The best comments explain constraints that aren't visible in the code. A reader can see `HOLD_THRESHOLD = 50.0`; what they can't see is that removing it would flood users with micro-transaction recommendations. The comment closes that gap.
+
+---
+
+**Arc 4 — Video script**
+> "This is a deliverable — I need a script so I can refer to and comment on the video walk-through of the application. Key learning especially technical acumen and various key insight prompts that led to high quality deliverable in terms of Architecture/Design, reusability, testability."
+
+Result: 5-minute video script written to `docs/video-script.md` (gitignored). Script structured around: intro → problem & setup → 6-tab live demo → architecture deep dive → key learnings → close. Accurately credits engineering experience as the source of patterns, AI as the implementation accelerator.
+Observation: The script needed two rounds of revision to get the attribution right. The first draft positioned the AI as discovering the patterns. The accurate version makes clear: the patterns came from production engineering experience, documented in CLAUDE.md before a line of code was written. That distinction matters for the video.
+
+---
+
+**Arc 5 — README and Google Doc GitHub links**
+> "I need to update the README — maybe summarize overview of what this application is, a GIF walking through each tab to showcase the application. Also, an Architecture, Design Diagram and high-level sequence flow for the app. Google Doc eventually I am going to copy it to a cloud Google Doc which means all the internal references for various files should become absolute GitHub URLs."
+
+Result: README rewritten with: 3-sentence project description, Quick Start, Architecture section with 3 Mermaid diagrams (app layers / data flow sequence / domain module layout), Design Patterns table, Testing section, Project Structure, Documentation links. All internal file references in `google_doc_content.html` and `docs/plan-day3.md` converted to `https://github.com/gayyaswa/vibe-coding-app/blob/main/` URLs.
+Observation: A README is the first thing a viewer sees on GitHub. The Mermaid diagrams render natively without any extra tooling — they are the architecture documentation, not a link to architecture documentation.
+
+---
+
+**Arc 6 — Cross-project custom commands and demo GIF**
+> "CLAUDE.md context and the plan file at ~/.claude/plans/... let's execute this plan?"
+> "i generated demo.gif using the command can we update the readme with it?"
+> "ok now let's follow the convention to document all this as day 4 plan implementation etc?"
+
+Result: Two user-level custom commands created at `~/.claude/commands/`: `generate-demo-gif.md` and `init-readme.md`. `/generate-demo-gif` invoked to produce `docs/demo.gif` (200KB, cycling through all 6 tabs). README already wired the GIF at the top — command handled it automatically. All three files documented following project conventions.
+Observation: User-level commands at `~/.claude/commands/` are available across every Claude Code project — a skill built once applies everywhere. This is different from project-level `.claude/skills/`: project skills capture operational knowledge for one project; user-level commands encode a repeatable workflow recipe you carry to any project.
+

@@ -22,7 +22,7 @@ Day 3 had two goals going in: add AI-powered portfolio insights using the Claude
 
 **What I chose:** Sunburst.
 
-**Why:** Same data, same hierarchy (Portfolio → risk_bucket → ticker), same BUCKET_COLORS — but arc/circular shapes instead of rectangles. Plotly-native means zero extra libraries. The key bonus: click any risk bucket arc and it zooms in to show only that bucket's holdings — the treemap couldn't do that cleanly. One file changed ([views/overview.py](../views/overview.py)), nothing else touched.
+**Why:** Same data, same hierarchy (Portfolio → risk_bucket → ticker), same BUCKET_COLORS — but arc/circular shapes instead of rectangles. Plotly-native means zero extra libraries. The key bonus: click any risk bucket arc and it zooms in to show only that bucket's holdings — the treemap couldn't do that cleanly. One file changed ([views/overview.py](https://github.com/gayyaswa/vibe-coding-app/blob/main/views/overview.py)), nothing else touched.
 
 ---
 
@@ -30,7 +30,7 @@ Day 3 had two goals going in: add AI-powered portfolio insights using the Claude
 
 **What I decided:** CSS injection via `st.markdown()` targeting Streamlit's BaseWeb tab classes. Curved top corners (`border-radius: 12px 12px 0px 0px`), gap between tabs (`gap: 8px`), active tab filled with primaryColor (`#1565C0`). All colors sourced from `config.toml` — no new hex values scattered through views.
 
-**Scope:** One CSS block in [app.py](../app.py), before the `st.tabs()` call. Nothing else touched.
+**Scope:** One CSS block in [app.py](https://github.com/gayyaswa/vibe-coding-app/blob/main/app.py), before the `st.tabs()` call. Nothing else touched.
 
 ---
 
@@ -40,7 +40,7 @@ Day 3 had two goals going in: add AI-powered portfolio insights using the Claude
 
 **What I chose:** After each slider, show `▲ +10.0% from current (24.3%)` in blue for increases, `▼ -5.0%` in red for decreases — rendered bold directly below each slider. Under 0.5% delta shows a muted "● At current allocation" line.
 
-**Scope:** 10 lines inside the existing loop in [views/allocation.py](../views/allocation.py).
+**Scope:** 10 lines inside the existing loop in [views/allocation.py](https://github.com/gayyaswa/vibe-coding-app/blob/main/views/allocation.py).
 
 ---
 
@@ -60,7 +60,7 @@ Day 3 had two goals going in: add AI-powered portfolio insights using the Claude
 
 ### 5. LLM as injected dependency, not hardcoded
 
-**What I decided:** The `ChatAnthropic` LLM is created once in [views/insights.py](../views/insights.py) from the API key, then injected into `InsightsFacade`, which passes it into each strategy via `InsightFactory.create(type, llm)`. Each strategy stores the LLM and builds its own LCEL chain in `__init__`.
+**What I decided:** The `ChatAnthropic` LLM is created once in [views/insights.py](https://github.com/gayyaswa/vibe-coding-app/blob/main/views/insights.py) from the API key, then injected into `InsightsFacade`, which passes it into each strategy via `InsightFactory.create(type, llm)`. Each strategy stores the LLM and builds its own LCEL chain in `__init__`.
 
 **Why:** Fully testable — tests inject a mock LLM, no real API calls needed. Swapping models = one line in the view, zero changes in `utils/`. This is the Dependency Injection pattern already in CLAUDE.md's standing instructions — it applied naturally here.
 

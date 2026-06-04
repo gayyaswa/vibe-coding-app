@@ -1,24 +1,14 @@
-from dataclasses import dataclass, field
 from typing import Dict
 
 import pandas as pd
 
-BENCHMARK_REGISTRY: Dict[str, Dict[str, float]] = {
-    "Conservative":      {"Less Risk": 50, "Moderate": 30, "Growth": 15, "Aggressive": 5},
-    "Balanced":          {"Less Risk": 25, "Moderate": 25, "Growth": 35, "Aggressive": 15},
-    "Aggressive Growth": {"Less Risk": 10, "Moderate": 10, "Growth": 50, "Aggressive": 30},
-}
-
-
-@dataclass
-class HealthScore:
-    benchmark_name: str
-    score: int
-    label: str
-    deviations: Dict[str, float] = field(default_factory=dict)
+from portfolio.health.benchmarks import BENCHMARK_REGISTRY
+from portfolio.health.health_score import HealthScore
 
 
 class HealthScoreFactory:
+    """Creates HealthScore instances by comparing a portfolio's allocation to predefined benchmarks (Factory pattern)."""
+
     @staticmethod
     def create(df: pd.DataFrame, benchmark_name: str) -> HealthScore:
         benchmark = BENCHMARK_REGISTRY[benchmark_name]
@@ -35,6 +25,8 @@ class HealthScoreFactory:
             deviations[bucket] = dev
             total_deviation += abs(dev)
 
+        # Score = 100 − (sum of absolute deviations / 2), clamped to [0, 100]
+        # Dividing by 2 normalises: a perfectly inverse allocation would score 0, not −100
         score = max(0, int(100 - total_deviation / 2))
 
         if score >= 80:
