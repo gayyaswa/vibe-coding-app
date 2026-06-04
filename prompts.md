@@ -130,7 +130,53 @@ Observation: Skills are how you stop re-solving the same setup problem every ses
 
 ---
 
-## Day 3 — AI Insights (planned: 2026-06-03)
-*Focus: Claude API integration, portfolio commentary, prompt caching*
+## Day 3 — AI Insights & Visualization Polish (2026-06-03)
+*Focus: LangChain AI insights, sunburst visualization, tab/slider UX polish, planning documentation*
 
-<!-- Add prompts here as Day 3 progresses -->
+---
+
+**Arc 1 — Brainstorming Day 3 scope + visualization upgrade**
+> "Shall we look in day 3 of the plan and start brainstorming. I might want to add one more thing to plan — instead of treemap being rectangles, can we visualize into something prettier shapes? Also conventions should be adhered when we are updating documentation — it should center around my learning and share my thinking like we updated yesterday."
+
+Result: Plan Mode session opened. Evaluated sunburst vs. packed bubbles vs. icicle chart via ASCII previews. Sunburst chosen. Day 3 scope set: sunburst, tab CSS, slider delta UX, AI insights, planning docs.
+Observation: Brainstorming with ASCII previews before committing to any visualization is now a fixed habit. Seeing the shape before building it takes 2 minutes and saves a potential rebuild.
+
+---
+
+**Arc 2 — UX details: tab borders and slider delta**
+> "Couple of high-level decisions for ai insight? Also tabs can we have some curvy border much prettier and add some separation on the border. Also when we change the allocation through slider let's show the text and % change below much bolder — right now % change isn't noticeable."
+
+Result: Tab CSS (curved borders, gap, active state blue fill) and per-slider delta lines (▲ blue / ▼ red, bold) added to plan. Current_pcts was already computed but never surfaced — a silent UX gap.
+Observation: The best UX feedback comes from using the app yourself and noticing what's missing. Both of these issues were invisible from the code but immediately obvious from the running app.
+
+---
+
+**Arc 3 — Deep dive into AI pipeline and tech stack**
+> "Give me more details about the AI insight pipeline and tech stack involved?"
+
+Result: Full pipeline diagram presented — click → InsightsFacade → InsightFactory → LCEL chain → Anthropic API → st.write_stream(). Token economy explained (cache hit = 10% cost). Portfolio context serialization format shown.
+Observation: Understanding the full pipeline before approving it changed what I asked for next. The LangChain question came directly from understanding the SDK layer. Deep technical understanding before implementation is time well spent.
+
+---
+
+**Arc 4 — LangChain instead of Anthropic SDK**
+> "Instead of Anthropic SDK can we introduce LangChain SDK abstraction? What I was given to understand with LangChain in the future I am free to use different models for such AI insights feature?"
+
+Result: Architecture changed to LangChain LCEL (ChatAnthropic | ChatPromptTemplate | StrOutputParser). LLM injected as dependency. InMemoryCache replaces Anthropic prompt caching. Model swap = one import change.
+Observation: This was a real tradeoff, not a free upgrade. Losing Anthropic's server-side caching was the cost of portability. Making that tradeoff explicitly — knowing what you're accepting and why — is different from just picking a framework because it sounds good.
+
+---
+
+**Arc 5 — Open-source API key safety**
+> "I am planning to keep this project open and accessible in GitHub so my course instructor and even others can run this site — if so maybe Claude API keys will become problematic. I want this AI insights feature to be configurable and turned off. But I am planning to submit my app demo using a video where I can showcase the AI insights feature."
+
+Result: Streamlit secrets design: .streamlit/secrets.toml gitignored, secrets.toml.example committed, tab always visible with disabled-but-explained state when no key.
+Observation: Asking "who else will run this?" before shipping changed the design. The visible-but-disabled pattern communicates what the feature does to someone who can't run it — which is exactly what a course submission needs to do.
+
+---
+
+**Arc 6 — Planning documentation as project artifact**
+> "Can we create individual plan detail and also link it part of day1, day2, day3 documentation to show the instructors and others effective use of such detailed planning? Also if you agree add it to the Claude convention as well."
+
+Result: docs/plan-day1.md, plan-day2.md, plan-day3.md created capturing planning thinking per day. Section 6 (Planning Documents) added to google_doc_content.html. CLAUDE.md updated with planning convention.
+Observation: Planning documents are the most honest record of a project. They show what was considered and rejected — the reasoning trail — which is harder to reconstruct from code alone. For a course submission demonstrating AI-assisted development, the planning record is as important as the final product.

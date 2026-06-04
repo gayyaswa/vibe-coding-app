@@ -69,11 +69,20 @@ Confirm focus areas with user at start of session:
 - If a new feature is added, update the relevant section in `google_doc_content.html`
 - The Iterations table in the HTML should reflect actual completed iterations, not plans
 
-### Adding AI features (Day 3)
-- Use the `anthropic` Python SDK
-- Default model: `claude-sonnet-4-6`
-- Include prompt caching on any repeated analysis calls (portfolio data as cached prefix)
-- Keep AI calls in a separate `utils/insights.py` module — do not mix into app.py directly
+### Adding AI features
+- Use LangChain (`langchain-anthropic`, `langchain-core`) — not the raw Anthropic SDK — for model portability
+- Default model: `claude-sonnet-4-6` via `ChatAnthropic`
+- Inject the LLM as a dependency — create it in the view layer, pass it into Facade and Strategy classes
+- Keep AI calls in separate `utils/insights.py` + `views/insights.py` — do not mix into app.py directly
+- API key via `st.secrets.get("ANTHROPIC_API_KEY")` with `os.environ` fallback
+- AI tabs must degrade gracefully: always visible, Generate buttons disabled with clear instructions when no key
+
+### Planning documents
+- After each day's session, save a planning summary as `docs/plan-dayN.md`
+- Content: key decisions made, options considered, what was rejected and why, what was learned
+- Tone: learning-centered — capture the thinking and reasoning, not just the outcome
+- Link the new plan from Section 6 of `google_doc_content.html`
+- Companion to `prompts.md`: prompts.md tracks the conversation arcs, plan docs capture the architectural thinking that preceded them
 
 ## Risk bucket definitions (do not change without user confirmation)
 | Bucket     | What goes in it |

@@ -48,6 +48,21 @@ def render(facade: PortfolioFacade, targets: Optional[dict], **kwargs) -> Option
                 bucket, min_value=0, max_value=100, value=default, step=1,
                 key=f"slider_{bucket}",
             )
+            delta = sliders[bucket] - current_pcts[bucket]
+            if abs(delta) >= 0.5:
+                icon, color = ("▲", "#1565C0") if delta > 0 else ("▼", "#F44336")
+                st.markdown(
+                    f"<span style='font-weight:700;font-size:13px;color:{color}'>"
+                    f"{icon} {delta:+.1f}% from current ({current_pcts[bucket]:.1f}%)"
+                    f"</span>",
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f"<span style='font-size:12px;color:#888'>● At current allocation "
+                    f"({current_pcts[bucket]:.1f}%)</span>",
+                    unsafe_allow_html=True,
+                )
 
         total_slider = sum(sliders.values())
         if total_slider != 100:

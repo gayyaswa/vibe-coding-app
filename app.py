@@ -57,14 +57,40 @@ filters = {"bucket_filter": bucket_filter, "sector_filter": sector_filter}
 
 # ── Tab navigation ────────────────────────────────────────────────────────────
 
-from views import overview, allocation, rebalancing, sector, gainloss
+from views import overview, allocation, rebalancing, sector, gainloss, insights
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+st.markdown("""
+<style>
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+.stTabs [data-baseweb="tab"] {
+    border-radius: 12px 12px 0px 0px;
+    border: 1px solid #B0C4D8;
+    border-bottom: none;
+    padding: 8px 20px;
+    background-color: #E3EAF2;
+    font-weight: 500;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    background-color: #C5D5E8;
+    border-color: #1565C0;
+}
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    background-color: #1565C0;
+    color: white;
+    border-color: #1565C0;
+}
+</style>
+""", unsafe_allow_html=True)
+
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Portfolio Overview",
     "Allocation Dashboard",
     "Rebalancing Engine",
     "Sector Breakdown",
     "Gain / Loss",
+    "AI Insights",
 ])
 
 with tab1:
@@ -83,3 +109,6 @@ with tab4:
 
 with tab5:
     gainloss.render(facade, filters=filters)
+
+with tab6:
+    insights.render(facade, targets=st.session_state["targets"])

@@ -24,7 +24,7 @@
 <body>
 
 <h1>Stock Portfolio Risk Analyzer</h1>
-<p class="meta">Vibe Coding Project &nbsp;|&nbsp; June 1–2, 2026 &nbsp;|&nbsp; Stack: Python · Streamlit · Pandas · Plotly &nbsp;|&nbsp; Days completed: 2 of 3</p>
+<p class="meta">Vibe Coding Project &nbsp;|&nbsp; June 1–3, 2026 &nbsp;|&nbsp; Stack: Python · Streamlit · Pandas · Plotly · LangChain · Anthropic &nbsp;|&nbsp; Days completed: 3 of 3</p>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>1. Project Overview</h2>
@@ -48,7 +48,7 @@
   </tr>
   <tr>
     <td><strong>Tech stack</strong></td>
-    <td>Python 3.9 · Streamlit (UI) · Pandas (data) · Plotly (charts) · Anthropic SDK (planned Day 3)</td>
+    <td>Python 3.9 · Streamlit (UI) · Pandas (data) · Plotly (charts) · LangChain + langchain-anthropic (AI insights) · claude-sonnet-4-6</td>
   </tr>
   <tr>
     <td><strong>App sections</strong></td>
@@ -58,7 +58,8 @@
       2. Allocation Dashboard — donut chart + target sliders with sum-to-100 validation<br>
       3. Rebalancing Engine — BUY / SELL / HOLD actions with dollar amounts<br>
       4. Sector Breakdown — grouped bar chart + sector × bucket heatmap<br>
-      5. Gain/Loss Summary — P&amp;L per ticker and per risk bucket
+      5. Gain/Loss Summary — P&amp;L per ticker and per risk bucket<br>
+      6. AI Insights — LangChain + Claude; Rebalancing Rationale + Sector Concentration; streaming token-by-token
     </td>
   </tr>
   <tr>
@@ -71,7 +72,7 @@
   </tr>
   <tr>
     <td><strong>Tests</strong></td>
-    <td>42 unit tests across 3 test files (test_categorizer.py · test_rebalancer.py · test_health.py). All pass.</td>
+    <td>48 unit tests across 4 test files (test_categorizer.py · test_rebalancer.py · test_health.py · test_insights.py). All pass.</td>
   </tr>
   <tr>
     <td><strong>Total portfolio value</strong></td>
@@ -189,6 +190,52 @@
   </tr>
 </table>
 
+<span class="section-label">Day 3 — AI Insights (2026-06-03)</span>
+<table>
+  <tr>
+    <th style="width:5%">#</th>
+    <th style="width:30%">Prompt / Conversation Arc</th>
+    <th style="width:25%">What It Produced</th>
+    <th>Key Observation</th>
+  </tr>
+  <tr>
+    <td>12</td>
+    <td>"Shall we look at day 3 of the plan and start brainstorming? I might want to add one more thing — instead of treemap being rectangles, can we visualize into something prettier shapes?"</td>
+    <td>Plan Mode session opened. Sunburst (vs. packed bubbles vs. icicle) evaluated via ASCII preview. Sunburst chosen: same hierarchy, circular arcs, click-to-zoom. Day 3 scope expanded to include visualization + AI insights.</td>
+    <td>Brainstorming before implementing is a habit now. The ASCII preview let me mentally validate the sunburst before a line of code was written — same technique as Day 2's treemap mockup.</td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td>"Couple of high-level decisions: tabs can we have some curvy border much prettier and add some separation. Also when we change the allocation through slider let's show the text and % change below much bolder — right now % change isn't noticeable."</td>
+    <td>Two UX fixes added to plan: CSS injection for curved tab borders with separation; bold ▲▼ delta line below each allocation slider showing change from current.</td>
+    <td>Both issues came from actually using the app and noticing what was missing. The best UX feedback comes from being your own user, not from design docs.</td>
+  </tr>
+  <tr>
+    <td>14</td>
+    <td>"Give me more details about the AI insight pipeline and tech stack involved?"</td>
+    <td>Full pipeline breakdown: click → InsightsFacade → InsightFactory → strategy → LCEL chain → Anthropic API → st.write_stream(). Token economy explanation. Portfolio context serialization format. Exact SDK call structure.</td>
+    <td>Understanding the full pipeline before approving it — not just the feature — made the implementation go faster and with zero surprises. Deep planning before code = mechanical execution after.</td>
+  </tr>
+  <tr>
+    <td>15</td>
+    <td>"Instead of Anthropic SDK can we introduce LangChain SDK abstraction? With LangChain in the future I am free to use different models."</td>
+    <td>Architecture changed: raw Anthropic SDK → LangChain LCEL chain (ChatAnthropic | prompt | StrOutputParser). LLM injected as dependency. Model swap = one import change. InMemoryCache replaces Anthropic prompt caching.</td>
+    <td>The tradeoff was real: losing provider-specific prompt caching in exchange for full model portability. Making that tradeoff consciously, with understanding of what was lost and why it was worth it, is different from just picking a framework because it sounds good.</td>
+  </tr>
+  <tr>
+    <td>16</td>
+    <td>"I am planning to keep this project open and accessible in GitHub — may Claude API keys will become problematic. I want the AI insights feature to be configurable and turned off."</td>
+    <td>Open-source safety design: Streamlit secrets (.streamlit/secrets.toml gitignored, secrets.toml.example committed). Tab always visible; Generate buttons disabled with clear instructions when no key. Graceful degradation without hiding the feature.</td>
+    <td>Thinking about your audience — not just your own local setup — before shipping is a habit worth building. The "visible-but-disabled" pattern communicates "this feature exists" to an instructor even without a key.</td>
+  </tr>
+  <tr>
+    <td>17</td>
+    <td>"Can we create individual plan detail and also link it part of day1, day2, day3 documentation to show the instructors effective use of such detailed planning? Also add it to the Claude convention."</td>
+    <td>docs/plan-day1.md, plan-day2.md, plan-day3.md created — each capturing the thinking, decisions, and learnings from that session's planning arc. Section 6 added to this document. CLAUDE.md updated with planning convention.</td>
+    <td>Planning documents are the most honest record of a project: what was considered and rejected, not just what was built. They show how thinking evolved — which is the part of AI-assisted development that's hardest to demonstrate from the code alone.</td>
+  </tr>
+</table>
+
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>4. Iterations Tried</h2>
 
@@ -272,6 +319,46 @@
   </tr>
 </table>
 
+<span class="section-label">Day 3 — AI Insights &amp; Visualization Polish</span>
+<table>
+  <tr>
+    <th style="width:20%">Iteration</th>
+    <th style="width:28%">What I Tried / Considered</th>
+    <th style="width:27%">What Was Chosen Instead</th>
+    <th>Why / How AI Collaboration Shaped This</th>
+  </tr>
+  <tr>
+    <td><strong>Portfolio visualization</strong></td>
+    <td>Treemap (Day 1–2 default) → considered packed bubbles and icicle chart</td>
+    <td>Sunburst chart — same hierarchy (Portfolio → bucket → ticker), circular arc shapes, click-to-zoom on any bucket</td>
+    <td>Evaluated three options with ASCII previews in Plan Mode before any code. Sunburst won on: Plotly-native (no extra libraries), same data model, and the click-to-zoom behavior the treemap lacked. One file changed.</td>
+  </tr>
+  <tr>
+    <td><strong>AI tech stack</strong></td>
+    <td>Raw Anthropic SDK (simpler, supports prompt caching natively)</td>
+    <td>LangChain LCEL chain (ChatAnthropic | ChatPromptTemplate | StrOutputParser) — model portability over provider-specific optimization</td>
+    <td>Conscious tradeoff: lose Anthropic prompt caching, gain one-line model swap. For an open-source course project, portability is the higher-value property. InMemoryCache covers the main use case (Regenerate same insight) without API calls.</td>
+  </tr>
+  <tr>
+    <td><strong>LLM in architecture</strong></td>
+    <td>Hardcode ChatAnthropic inside InsightsFacade</td>
+    <td>LLM injected as dependency — created in view layer, passed into Facade → InsightFactory → Strategy</td>
+    <td>Dependency Injection pattern (already in CLAUDE.md standing instructions) applied naturally. Swapping models = one line in views/insights.py. Tests inject a mock LLM — no live API calls needed.</td>
+  </tr>
+  <tr>
+    <td><strong>Open-source API key handling</strong></td>
+    <td>Environment variable only (less discoverable for GitHub users)</td>
+    <td>Streamlit secrets (.streamlit/secrets.toml gitignored) + .example template committed + tab visible-but-disabled when no key</td>
+    <td>Thinking about GitHub audience before shipping. Visible-but-disabled communicates "this feature exists and here's how to enable it" — more informative for an instructor than a tab that disappears entirely.</td>
+  </tr>
+  <tr>
+    <td><strong>Insight scope</strong></td>
+    <td>3 types: risk commentary + rebalancing rationale + sector concentration</td>
+    <td>2 types: rebalancing rationale + sector concentration</td>
+    <td>Risk commentary overlaps with the Portfolio Health Score already on the Overview tab. Removing it avoided redundancy. Two distinct, focused insights are more useful than three overlapping ones.</td>
+  </tr>
+</table>
+
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 <h2>5. Learnings and Observations</h2>
 <p style="font-size:10pt; color:#555;">Reflections on using Claude Code as an agentic AI tool to build this application — what shaped my thinking, what I'd do differently, what I now do by default.</p>
@@ -342,6 +429,69 @@
       2. <strong>Plan Mode frequency</strong> — I used it for the large refactor but not for smaller changes. What's the right threshold?<br>
       3. <strong>Feedback loops</strong> — I caught the theme misinterpretation and the session state issue myself. Are there techniques to make the AI surface those ambiguities proactively, before I have to?
     </td>
+  </tr>
+</table>
+
+<span class="section-label">Day 3 — Learning to plan deeper</span>
+<table>
+  <tr>
+    <th style="width:22%">Category</th>
+    <th>Observation</th>
+  </tr>
+  <tr>
+    <td><strong>Longer planning pays off more for AI features</strong></td>
+    <td>The Day 3 planning session was longer than Days 1 and 2 combined — and produced zero mid-implementation reversals. Every architectural choice (LangChain vs. SDK, DI pattern, streaming UX, session caching, key management, open-source safety) was decided and recorded before touching code. The implementation was mechanical execution of an agreed design. Planning time is not overhead — for AI features, it is the design work.</td>
+  </tr>
+  <tr>
+    <td><strong>Tradeoffs are decisions, not problems</strong></td>
+    <td>Choosing LangChain over the Anthropic SDK meant accepting a real loss: Anthropic's server-side prompt caching. I made that choice consciously, with full understanding of what was being traded away and why portability was worth more for this project. Making tradeoffs deliberately — rather than defaulting to whatever the AI suggests first — is a skill that develops across sessions, not within one.</td>
+  </tr>
+  <tr>
+    <td><strong>Open-source thinking changes design decisions</strong></td>
+    <td>I didn't start Day 3 thinking about GitHub audiences. But the "will others run this?" question changed the API key design, the secrets.toml.example approach, the visible-but-disabled pattern for the AI tab, and the planning docs structure. Asking "who else will use this and what will they see?" is a design question as much as a distribution one.</td>
+  </tr>
+  <tr>
+    <td><strong>AI-assisted development is observable</strong></td>
+    <td>The three plan documents (docs/plan-day1.md through plan-day3.md) capture not just what was built, but how decisions were made — what was considered, what was rejected, and why. That record is only possible because planning happened through conversation with an AI that could preserve the reasoning. The artifact isn't just the app; it's the thinking trail behind it.</td>
+  </tr>
+  <tr>
+    <td><strong>What I'd ask an instructor (Day 3 additions)</strong></td>
+    <td>
+      1. <strong>LangChain abstraction depth</strong> — Is LCEL the right level of abstraction for a project at this scale, or is it over-engineering for 2 insight types?<br>
+      2. <strong>Planning docs as deliverables</strong> — Are docs/plan-dayN.md files a useful artifact for course submissions, or is prompts.md sufficient?<br>
+      3. <strong>Streaming UX vs. simplicity</strong> — I chose streaming for the live feel. But for insights that take 2–3 seconds, does the UX benefit justify the added complexity?
+    </td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>6. Planning Documents</h2>
+<p style="font-size:10pt; color:#555;">Detailed planning sessions preceded each day's implementation. These documents capture the architectural thinking — what was brainstormed, what was considered and rejected, and the reasoning behind every key decision. They are the record of how the app was designed, not just what it became.</p>
+
+<table>
+  <tr>
+    <th style="width:10%">Day</th>
+    <th style="width:20%">Plan File</th>
+    <th style="width:35%">What Was Planned</th>
+    <th>Key Planning Insight</th>
+  </tr>
+  <tr>
+    <td><strong>Day 1</strong></td>
+    <td><code>docs/plan-day1.md</code></td>
+    <td>Greenfield architecture: 4 risk buckets, two-layer classification (ticker override + sector), rebalancing math (proportional distribution, $50 HOLD threshold), slider sum constraint, 5-section Streamlit structure</td>
+    <td>Planning in natural language replaced a design doc. The AI asked clarifying questions that forced me to articulate decisions I hadn't consciously made yet. By the end of the first conversation, the full architecture was clear — not because I planned it in advance, but because back-and-forth surfaced it.</td>
+  </tr>
+  <tr>
+    <td><strong>Day 2</strong></td>
+    <td><code>docs/plan-day2.md</code></td>
+    <td>views/ refactor (306 → 60 line app.py), 6 design patterns as standing instructions, navigation redesign (sidebar → tabs), blue/grey theme (chrome vs. data colors), session state inputs-only approach, Portfolio Health Score (Registry + Factory)</td>
+    <td>One CLAUDE.md instruction permanently reshaped 8 files. Explicit Plan Mode session before the large refactor caught two structural issues before any code was written. Plan Mode as a pre-refactor checkpoint is now a fixed habit.</td>
+  </tr>
+  <tr>
+    <td><strong>Day 3</strong></td>
+    <td><code>docs/plan-day3.md</code></td>
+    <td>Sunburst visualization (vs. packed bubbles, icicle), tab CSS polish, slider delta UX, LangChain LCEL architecture (vs. raw Anthropic SDK), DI pattern for LLM injection, open-source key management (Streamlit secrets), streaming + session caching UX, visible-but-disabled graceful degradation</td>
+    <td>Deeper planning = zero mid-implementation reversals. Every decision was made and recorded before touching code. The tradeoff between LangChain portability and Anthropic prompt caching was consciously accepted — not defaulted into.</td>
   </tr>
 </table>
 
