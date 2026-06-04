@@ -5,8 +5,8 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from utils.categorizer import assign_risk_bucket
-from utils.health import BENCHMARK_REGISTRY, HealthScore, HealthScoreFactory
+from portfolio.classification import assign_risk_bucket
+from portfolio.health import BENCHMARK_REGISTRY, HealthScore, HealthScoreFactory
 
 
 def _make_portfolio(less_risk=10000, moderate=5000, growth=20000, aggressive=5000):

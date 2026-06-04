@@ -3,7 +3,7 @@ from typing import Optional
 import plotly.graph_objects as go
 import streamlit as st
 
-from utils.facade import PortfolioFacade
+from portfolio.facade import PortfolioFacade
 from views import apply_theme
 
 

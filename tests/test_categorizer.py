@@ -5,7 +5,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from utils.categorizer import assign_risk_bucket, BUCKET_ORDER, BUCKET_COLORS
+from portfolio.classification import assign_risk_bucket, BUCKET_ORDER, BUCKET_COLORS
 
 
 def _make_row(ticker, sector, shares=10, purchase_price=100.0, current_price=110.0):

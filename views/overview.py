@@ -1,8 +1,9 @@
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
-from utils.categorizer import BUCKET_COLORS
-from utils.facade import PortfolioFacade
+from portfolio.classification import BUCKET_COLORS
+from portfolio.facade import PortfolioFacade
 from views import apply_theme
 
 
@@ -33,9 +34,9 @@ def render(facade: PortfolioFacade, filters: dict) -> None:
 
     st.divider()
 
-    # ── Treemap — dominant view ───────────────────────────────────────────────
+    # ── Sunburst — dominant view ──────────────────────────────────────────────
     st.subheader("Portfolio Composition")
-    treemap_fig = px.treemap(
+    sunburst_fig = px.sunburst(
         df,
         path=[px.Constant("Portfolio"), "risk_bucket", "ticker"],
         values="market_value",
@@ -43,18 +44,19 @@ def render(facade: PortfolioFacade, filters: dict) -> None:
         color_discrete_map=BUCKET_COLORS,
         custom_data=["name", "unrealized_pnl", "pnl_pct"],
     )
-    treemap_fig.update_traces(
+    sunburst_fig.update_traces(
         hovertemplate=(
             "<b>%{label}</b><br>"
             "%{customdata[0]}<br>"
             "Value: $%{value:,.0f}<br>"
             "P&L: $%{customdata[1]:,.0f} (%{customdata[2]:.1f}%)"
             "<extra></extra>"
-        )
+        ),
+        textfont=dict(size=13),
     )
-    treemap_fig.update_layout(margin=dict(t=30, l=0, r=0, b=0))
-    apply_theme(treemap_fig)
-    st.plotly_chart(treemap_fig, use_container_width=True)
+    sunburst_fig.update_layout(margin=dict(t=30, l=0, r=0, b=0), height=520)
+    apply_theme(sunburst_fig)
+    st.plotly_chart(sunburst_fig, use_container_width=True)
 
     # ── Health Score cards ────────────────────────────────────────────────────
     st.subheader("Portfolio Health vs Benchmarks")

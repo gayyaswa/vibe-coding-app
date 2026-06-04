@@ -2,8 +2,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from utils.categorizer import BUCKET_COLORS, BUCKET_ORDER
-from utils.facade import PortfolioFacade
+from portfolio.classification import BUCKET_COLORS, BUCKET_ORDER
+from portfolio.facade import PortfolioFacade
 from views import apply_theme
 
 

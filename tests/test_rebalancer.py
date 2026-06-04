@@ -5,8 +5,8 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from utils.categorizer import assign_risk_bucket, BUCKET_ORDER
-from utils.rebalancer import bucket_summary, compute_rebalancing, HOLD_THRESHOLD
+from portfolio.classification import assign_risk_bucket, BUCKET_ORDER
+from portfolio.rebalancing import bucket_summary, compute_rebalancing, HOLD_THRESHOLD
 
 
 def _make_portfolio():
